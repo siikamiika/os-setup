@@ -1,0 +1,3 @@
+# TODO 
+# - chocolatey
+# - python3

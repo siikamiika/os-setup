@@ -1,0 +1,4 @@
+- compatibility with different layouts, not just chromebook
+- spoof keycodes
+- hide altgr or similar modifier from apps
+- uinput?

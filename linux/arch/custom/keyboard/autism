@@ -1,0 +1,129 @@
+// vi: ft=xkb
+// Linux port of https://github.com/siikamiika/scripts/blob/master/windows/autismlayout.klc
+
+default  partial alphanumeric_keys modifier_keys
+xkb_symbols "basic" {
+
+    name[Group1]= "Autism (US)";
+
+    // top row (numbers)
+    key <TLDE> { [ grave, asciitilde, dead_grave, dead_tilde ] };
+    key <AE01> { [ 1, exclam, F1, F1 ] };
+    key <AE02> { [ 2, at, F2, F2 ] };
+    key <AE03> { [ 3, numbersign, F3, F3 ] }; // TODO dead_macron
+    key <AE04> { [ 4, dollar, F4, F4 ] };
+    key <AE05> { [ 5, percent, F5, F5 ] }; // TODO dead_cedilla
+    key <AE06> { [ 6, asciicircum, F6, F6 ] }; // TODO dead_circumflex
+    key <AE07> { [ 7, ampersand, F7, F7 ] }; // TODO dead_horn
+    key <AE08> {
+        type = "EIGHT_LEVEL",
+        symbols[Group1] = [ 8, asterisk, F8, F8, 8, asterisk, asterisk, asterisk ]
+    }; // TODO dead_ogonek
+    key <AE09> { [ 9, parenleft, F9, F9 ] }; // TODO dead_breve
+    key <AE10> { [ 0, parenright, F10, F10 ] }; // TODO dead_abovering
+    key <AE11> { [ minus, underscore, F11, F11 ] }; // TODO endash, emdash
+    key <AE12> { [ equal, plus, F12, F12 ] }; // TODO dead_acute
+
+    // first letter row
+    key <AD01> { [ q, Q, aring, Aring ] };
+    key <AD02> { [ w, W, w, W ] };
+    key <AD03> { [ e, E, EuroSign, sterling ] };
+    key <AD04> { [ r, R, yen, R ] };
+    key <AD05> { [ t, T, t, T ] };
+    key <AD06> { [ y, Y, udiaeresis, Udiaeresis ] };
+    key <AD07> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ u, U, Delete, Delete, 4, 4, Delete, Delete ]
+    };
+    key <AD08> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ i, I, Insert, Insert, 5, 5, Insert, Insert ]
+    };
+    key <AD09> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ o, O, odiaeresis, Odiaeresis, 6, 6, 6, 6 ]
+    };
+    key <AD10> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ p, P, Home, Home, plus, plus, Home, Home ]
+    };
+    key <AD11> {
+        type = "EIGHT_LEVEL",
+        symbols[Group1] = [ bracketleft, braceleft, Prior, Prior, aring, Aring, Prior, Prior ]
+    };
+    key <AD12> { [ bracketright, braceright, dead_circumflex, dead_diaeresis ] };
+    key <BKSL> {
+        type = "EIGHT_LEVEL",
+        symbols[Group1] = [ backslash, bar, NumLock, brokenbar, NumLock, NoSymbol, NumLock, NoSymbol ],
+        actions[Group1] = [ NoAction(), NoAction(), LockMods(modifiers=NumLock), NoAction(),
+            LockMods(modifiers=NumLock), NoAction(), LockMods(modifiers=NumLock), NoAction() ]
+    };
+
+    // second letter row
+    key <AC01> { [ a, A, adiaeresis, Adiaeresis ] };
+    key <AC02> { [ s, S, s, section ] };
+    key <AC03> { [ d, D, d, D ] };
+    key <AC04> { [ f, F, f, F ] };
+    key <AC05> { [ g, G, g, G ] };
+    key <AC06> { [ h, H, Left, Left ] };
+    key <AC07> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ j, J, Down, Down, 1, 1, Down, Down ]
+    };
+    key <AC08> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ k, K, Up, Up, 2, 2, Up, Up ]
+    };
+    key <AC09> {
+        type = "EIGHT_LEVEL_SEMIALPHABETIC",
+        symbols[Group1] = [ l, L, Right, Right, 3, 3, Right, Right ]
+    };
+    key <AC10> {
+        type = "EIGHT_LEVEL",
+        symbols[Group1] = [ semicolon, colon, End, End, odiaeresis, Odiaeresis, End, End ]
+    };
+    key <AC11> {
+        type = "EIGHT_LEVEL",
+        symbols[Group1] = [ apostrophe, quotedbl, Next, Next, adiaeresis, Adiaeresis, Next, Next ]
+    };
+
+    // bottom letter row
+    key <AB01> { [ z, Z, z, Z ] };
+    key <AB02> { [ x, X, x, X ] };
+    key <AB03> { [ c, C, c, copyright ] };
+    key <AB04> { [ v, V, v, registered ] };
+    key <AB05> { [ b, B, b, B ] };
+    key <AB06> { [ n, N, ntilde, Ntilde ] };
+    key <AB07> { [ m, M, mu, mu ] };
+    key <AB08> { [ comma, less, ccedilla, Ccedilla ] };
+    key <AB09> { [ period, greater, dead_abovedot, dead_caron ] };
+    key <AB10> { [ slash, question, questiondown, dead_hook ] };
+
+    // misc
+    key <CAPS> {
+        symbols[Group1] = [ Escape, Caps_Lock, Eisu_toggle, NoSymbol ],
+        actions[Group1] = [ NoAction(), LockMods(modifiers=Lock), NoAction(), NoAction() ]
+    };
+    // Chromebook specials
+    key <LWIN> {
+        symbols[Group1] = [ Escape, Caps_Lock, Eisu_toggle, NoSymbol ],
+        actions[Group1] = [ NoAction(), LockMods(modifiers=Lock), NoAction(), NoAction() ]
+    };
+    key <LSGT> { [ Super_L, Super_L, Super_L, Super_L ] };
+
+    include "level3(ralt_switch)"
+    modifier_map Mod2 { <MUHE> };
+    replace key <MDSW> {
+        type[Group1] = "ONE_LEVEL",
+        symbols[Group1] = [ ISO_Level5_Shift ]
+    };
+    modifier_map Mod2 { <MDSW> };
+};
+
+partial alphanumeric_keys
+xkb_symbols "fcitx-hack" {
+
+    include "autism(basic)"
+
+    name[Group1] = "Autism (US, fcitx hack)";
+};
