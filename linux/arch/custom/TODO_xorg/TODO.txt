@@ -1,0 +1,3 @@
+- run in background
+- docker? https://github.com/suchja/x11server
+- vnc

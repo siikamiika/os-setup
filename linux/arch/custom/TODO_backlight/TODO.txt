@@ -1,0 +1,5 @@
+- intel
+- amd
+- group
+- XF86MonBrightnessUp
+- XF86MonBrightnessDown
