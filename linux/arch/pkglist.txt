@@ -87,3 +87,4 @@ xorg-xwayland
 yarn
 yay
 youtube-dl
+zram-generator
