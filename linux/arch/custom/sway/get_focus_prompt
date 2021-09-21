@@ -1,4 +1,5 @@
 #!/usr/bin/fish
+# TODO .shell: xwayland or native
 swaymsg -t get_tree | jq -c -r '
     ..
     | .nodes?
@@ -9,25 +10,16 @@ swaymsg -t get_tree | jq -c -r '
     | .nodes?
     | .[]?
     | select(.layout | contains("none"))
-    | {
-        workspace: $parent.num,
-        con_id: .id,
-        app: (if .app_id == null then .window_properties.class else .app_id end),
-        title: .name,
-        shell: .shell
-    }
-    | {
-        workspace: .workspace,
-        con_id: .con_id,
-        app_icon: (
-            if .app == "firefoxdeveloperedition" then ""
-            elif .app == "Alacritty" then ""
-            elif .app == "Spotify" then ""
-            else "" end
-        ),
-        app: .app,
-        title: .title
-    }
-    | select(.title | contains("alacritty --title=launcher") | not)
-    | (.workspace|tostring) + "  " + .app_icon + "  " + .title + "\t\t\t\t\t\t\t\t\t\t" + .app + "\t" + (.con_id|tostring)
+    | select(.name | contains("alacritty --title=launcher") | not)
+    | (
+        if .app_id == null then .window_properties.class
+        else .app_id end
+    ) as $app
+    | (
+        if $app == "firefoxdeveloperedition" then ""
+        elif $app == "Alacritty" then ""
+        elif $app == "Spotify" then ""
+        else "" end
+    ) as $app_icon
+    | ($parent.num|tostring) + "  " + $app_icon + "  " + .name + "\t\t\t\t\t\t\t\t\t\t" + $app + "\t" + (.id|tostring)
     '
