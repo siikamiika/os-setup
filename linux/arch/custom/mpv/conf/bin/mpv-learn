@@ -1,0 +1,2 @@
+#!/usr/bin/bash
+mpv --force-window --script=~/.config/mpv/scripts/manual/focusplay.lua --script=~/.config/mpv/scripts/manual/subcopy.lua "$@"
