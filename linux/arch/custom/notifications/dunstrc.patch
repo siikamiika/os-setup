@@ -1,0 +1,28 @@
+109c109
+<     font = Monospace 8
+---
+>     font = Sarasa Term J 10
+286,288c286,288
+<     mouse_left_click = close_current
+<     mouse_middle_click = do_action, close_current
+<     mouse_right_click = close_all
+---
+>     mouse_left_click = do_action
+>     mouse_middle_click = do_action
+>     mouse_right_click = close_current
+313c313
+<     # close = ctrl+space
+---
+>     close = ctrl+space
+317c317
+<     # close_all = ctrl+shift+space
+---
+>     close_all = ctrl+shift+space
+321c321
+<     # history = ctrl+grave
+---
+>     history = ctrl+grave
+325c325
+<     # context = ctrl+shift+period
+---
+>     context = ctrl+shift+period
