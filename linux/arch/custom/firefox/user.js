@@ -1,0 +1,10 @@
+user_pref("browser.sessionstore.warnOnQuit", true);
+user_pref("browser.toolbars.bookmarks.visibility", "never");
+user_pref("full-screen-api.transition.timeout", 0);
+user_pref("full-screen-api.warning.delay", 0);
+user_pref("full-screen-api.warning.timeout", 0);
+user_pref("middlemouse.paste", false);
+user_pref("mousewheel.default.delta_multiplier_x", 30);
+user_pref("mousewheel.default.delta_multiplier_y", 30);
+user_pref("mousewheel.default.delta_multiplier_z", 30);
+user_pref("ui.key.menuAccessKeyFocuses", false);

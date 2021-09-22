@@ -1,2 +1,0 @@
-- new way? https://support.mozilla.org/en-US/kb/customizing-firefox-using-autoconfig
-- user_pref: https://support.mozilla.org/en-US/questions/1245926
