@@ -16,6 +16,13 @@ user_pref("ui.prefersReducedMotion", 1);
 
 
 // ---------------------
+// language
+// ---------------------
+user_pref("intl.accept_languages", "en-US, en");
+user_pref("intl.locale.requested", "ja");
+
+
+// ---------------------
 // fonts
 // ---------------------
 user_pref("font.language.group", "ja");
