@@ -1,0 +1,45 @@
+47c47
+< #set preview_script ~/.config/ranger/scope.sh
+---
+> set preview_script ~/.config/ranger/scope.sh
+74c74
+< set preview_images false
+---
+> set preview_images true
+173c173
+< set mouse_enabled true
+---
+> set mouse_enabled false
+186c186
+< set update_title false
+---
+> set update_title true
+189c189
+< set update_tmux_title true
+---
+> set update_tmux_title false
+199c199
+< set tilde_in_titlebar false
+---
+> set tilde_in_titlebar true
+423c423
+< #map <DELETE>   console delete
+---
+> map <DELETE>   console delete
+439a440
+> copymap K <C-E>
+475a477,478
+> map <A-o> shell nvim -S Session.vim
+> map <A-p> shell pcmanfm
+531a535,537
+> map <C-f> fzf_select
+> map <A-f> console fzf_grep%space
+> map <C-g> console fzf_grep_select%space
+707a714
+> pmap  <C-e>       pager_move  up=0.5    pages=True
+716a724
+> copypmap <C-e>      e
+738a747
+> tmap <C-e>       taskview_move up=0.5    pages=True
+744a754
+> copytmap <C-e>      e
