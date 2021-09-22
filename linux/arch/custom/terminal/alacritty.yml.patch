@@ -1,0 +1,73 @@
+17c17
+< #env:
+---
+> env:
+24c24
+<   #TERM: alacritty
+---
+>   TERM: xterm-256color
+179c179
+< #colors:
+---
+> colors:
+181,183c181,183
+<   #primary:
+<   #  background: '#1d1f21'
+<   #  foreground: '#c5c8c6'
+---
+>   primary:
+>     background: '0x101010'
+>     foreground: '0xd4d4d4'
+200,202c200,202
+<   #cursor:
+<   #  text: CellBackground
+<   #  cursor: CellForeground
+---
+>   cursor:
+>     text: '0x000000'
+>     cursor: '0xff0000'
+270,278c270,278
+<   #normal:
+<   #  black:   '#1d1f21'
+<   #  red:     '#cc6666'
+<   #  green:   '#b5bd68'
+<   #  yellow:  '#f0c674'
+<   #  blue:    '#81a2be'
+<   #  magenta: '#b294bb'
+<   #  cyan:    '#8abeb7'
+<   #  white:   '#c5c8c6'
+---
+>   normal:
+>     black:   '0x171717'
+>     red:     '0xFF5E5E'
+>     green:   '0x9CE82B'
+>     yellow:  '0xF0E68C'
+>     blue:    '0x008AFF'
+>     magenta: '0xE88CFF'
+>     cyan:    '0x87CEFA'
+>     white:   '0xDCDCCC'
+281,289c281,289
+<   #bright:
+<   #  black:   '#666666'
+<   #  red:     '#d54e53'
+<   #  green:   '#b9ca4a'
+<   #  yellow:  '#e7c547'
+<   #  blue:    '#7aa6da'
+<   #  magenta: '#c397d8'
+<   #  cyan:    '#70c0b1'
+<   #  white:   '#eaeaea'
+---
+>   bright:
+>     black:   '0x737373'
+>     red:     '0xFF7878'
+>     green:   '0x9ACD32'
+>     yellow:  '0xEEE8AA'
+>     blue:    '0x4F98FF'
+>     magenta: '0xEDA6FF'
+>     cyan:    '0xB0E2FF'
+>     white:   '0xFFFFFF'
+722c722,723
+< #key_bindings:
+---
+> key_bindings:
+>   - { key: Tab, mods: Alt|Shift, chars: "\x1b\x1b\x5b\x5a" }

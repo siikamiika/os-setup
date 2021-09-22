@@ -45,6 +45,7 @@ openbox
 openssh
 p7zip
 pacman-contrib
+patch
 pavucontrol
 pcmanfm
 picom
