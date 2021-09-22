@@ -1,0 +1,4 @@
+- addons: /usr/lib/firefox-developer-edition/browser/extensions/name@domain.xpi
+    - tst
+    - ubo
+- userChrome.css
