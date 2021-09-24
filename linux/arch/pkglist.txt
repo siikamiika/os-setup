@@ -7,7 +7,9 @@ binutils
 bluez
 bluez-utils
 ctags
+dunst
 element-desktop
+expect
 fakeroot
 fcitx5
 fcitx5-configtool
@@ -28,6 +30,7 @@ iotop
 jq
 kanshi
 leafpad
+libnotify
 light
 linux
 linux-firmware

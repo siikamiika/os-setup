@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+
+import subprocess
+import re
+import time
+
+
+# https://stackoverflow.com/a/923034
+def set_proc_name(newname):
+    from ctypes import cdll, byref, create_string_buffer
+    libc = cdll.LoadLibrary('libc.so.6')
+    buff = create_string_buffer(len(newname)+1)
+    buff.value = newname
+    libc.prctl(15, byref(buff), 0, 0, 0)
+
+
+class LibinputDebugEventReader:
+
+    def get_events(self):
+        proc = subprocess.Popen(
+            ['unbuffer', 'libinput', 'debug-events'],
+            stdout=subprocess.PIPE,
+            bufsize=1,
+            universal_newlines=True
+        )
+        for line in proc.stdout:
+            parsed_event = self.parse_event(line)
+            if parsed_event:
+                yield parsed_event
+
+    def parse_event(self, line):
+        re_float = '[+-]?\d*\.\d*'
+        m = re.match(
+            rf'''
+            \s*
+            event\d+
+            \s+
+            GESTURE_SWIPE_
+            (?P<type>
+                UPDATE|END
+            )
+            \s+
+            \+\d*\.\d*s
+            \s+
+            (?P<fingers>
+                \d+
+            )
+            \s*
+            (
+                $
+                |
+                cancelled
+                |
+                (?P<swipe_x>
+                    {re_float}
+                )
+                \/\s?
+                (?P<swipe_y>
+                    {re_float}
+                )
+            )
+            ''',
+            line,
+            re.VERBOSE
+        )
+        if m:
+            event_type = m.group('type')
+            if event_type == 'UPDATE':
+                return {
+                    'type': 'update',
+                    'fingers': int(m.group('fingers')),
+                    'swipe_x': float(m.group('swipe_x')),
+                    'swipe_y': float(m.group('swipe_y')),
+                }
+            elif event_type == 'END':
+                return {
+                    'type': 'end',
+                    'fingers': int(m.group('fingers')),
+                }
+
+
+class GestureEventSource:
+
+    EVENT_THRESHOLD = 200.0
+    EVENT_THRESHOLD_FACTOR = 2
+    RELEASE_THRESHOLD_FACTOR = 0.1
+
+    def __init__(self):
+        self._state = {
+            'started': None,
+            'fingers': None,
+            'pos_x': 0.0,
+            'pos_y': 0.0,
+            'threshold': GestureEventSource.EVENT_THRESHOLD,
+            'events_triggered':  0,
+        }
+        self._event_reader = LibinputDebugEventReader()
+
+    def listen(self):
+        for event in self._event_reader.get_events():
+            # TODO check if fingers is the same
+            if event['type'] == 'update':
+                if self._state['started'] is None:
+                    self._state['started'] = time.time()
+                    self._state['fingers'] = event['fingers']
+                self._state['pos_x'] += event['swipe_x']
+                self._state['pos_y'] += event['swipe_y']
+                yield from self._consume()
+            elif event['type'] == 'end':
+                if self._state['events_triggered'] == 0:
+                    self._state['threshold'] *= GestureEventSource.RELEASE_THRESHOLD_FACTOR
+                    yield from self._consume(max_events=1)
+                self._reset_state()
+
+    def _consume(self, max_events=None):
+        while True:
+            if self._state['pos_x'] >= self._state['threshold']:
+                self._state['pos_x'] -= self._state['threshold']
+                self._state['events_triggered'] += 1
+                yield {
+                    'direction': 'right',
+                    'fingers': self._state['fingers'],
+                }
+            elif self._state['pos_x'] <= -self._state['threshold']:
+                self._state['pos_x'] += self._state['threshold']
+                self._state['events_triggered'] += 1
+                yield {
+                    'direction': 'left',
+                    'fingers': self._state['fingers'],
+                }
+            else:
+                break
+            if max_events is not None:
+                if max_events >= self._state['events_triggered']:
+                    break
+            self._state['threshold'] *= GestureEventSource.EVENT_THRESHOLD_FACTOR
+
+    def _reset_state(self):
+        self._state['fingers'] = None
+        self._state['started'] = None
+        self._state['pos_x'] = 0.0
+        self._state['pos_y'] = 0.0
+        self._state['threshold'] = GestureEventSource.EVENT_THRESHOLD
+        self._state['events_triggered'] = 0
+
+
+def main():
+    # single instance hack
+    subprocess.call(['killall', 'sway_gesture_input'])
+    set_proc_name(b'sway_gesture_input')
+
+    ges = GestureEventSource()
+    for event in ges.listen():
+        if event['direction'] == 'left':
+            if event['fingers'] == 3:
+                subprocess.call(['swaymsg', 'focus', 'left'])
+            elif event['fingers'] == 4:
+                subprocess.call(['swaymsg', 'workspace', 'prev_on_output'])
+        elif event['direction'] == 'right':
+            if event['fingers'] == 3:
+                subprocess.call(['swaymsg', 'focus', 'right'])
+            elif event['fingers'] == 4:
+                subprocess.call(['swaymsg', 'workspace', 'next_on_output'])
+
+
+if __name__ == '__main__':
+    main()
