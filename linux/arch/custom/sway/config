@@ -185,7 +185,7 @@ for_window [window_role="pop-up"] floating enable
 for_window [class="Pcmanfm"] floating enable
 # this does not work in sway, use workaround
 # for_window [floating] resize set 640 480
-floating_maximum_size 1280 x 720
+floating_maximum_size 1600 x 900
 
 
 ########################################
