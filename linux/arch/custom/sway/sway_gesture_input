@@ -81,8 +81,7 @@ class LibinputDebugEventReader:
 
 class GestureEventSource:
 
-    EVENT_THRESHOLD = 200.0
-    EVENT_THRESHOLD_FACTOR = 2
+    EVENT_THRESHOLD = 100.0
     RELEASE_THRESHOLD_FACTOR = 0.1
 
     def __init__(self):
@@ -113,19 +112,23 @@ class GestureEventSource:
                 self._reset_state()
 
     def _consume(self, max_events=None):
+        other_axis, consumed_axis = sorted(['pos_x', 'pos_y'], key=lambda a: abs(self._state[a]))
+        self._state[other_axis] = 0.0
         while True:
-            if self._state['pos_x'] >= self._state['threshold']:
-                self._state['pos_x'] -= self._state['threshold']
+            if self._state[consumed_axis] >= self._state['threshold']:
+                self._state[consumed_axis] -= self._state['threshold']
                 self._state['events_triggered'] += 1
+                direction = 'right' if consumed_axis == 'pos_x' else 'down'
                 yield {
-                    'direction': 'right',
+                    'direction': direction,
                     'fingers': self._state['fingers'],
                 }
-            elif self._state['pos_x'] <= -self._state['threshold']:
-                self._state['pos_x'] += self._state['threshold']
+            elif self._state[consumed_axis] <= -self._state['threshold']:
+                self._state[consumed_axis] += self._state['threshold']
                 self._state['events_triggered'] += 1
+                direction = 'left' if consumed_axis == 'pos_x' else 'up'
                 yield {
-                    'direction': 'left',
+                    'direction': direction,
                     'fingers': self._state['fingers'],
                 }
             else:
@@ -133,7 +136,6 @@ class GestureEventSource:
             if max_events is not None:
                 if max_events >= self._state['events_triggered']:
                     break
-            self._state['threshold'] *= GestureEventSource.EVENT_THRESHOLD_FACTOR
 
     def _reset_state(self):
         self._state['fingers'] = None
@@ -151,15 +153,15 @@ def main():
 
     ges = GestureEventSource()
     for event in ges.listen():
-        if event['direction'] == 'left':
-            if event['fingers'] == 3:
+        if event['fingers'] == 3:
+            if event['direction'] == 'left':
                 subprocess.call(['swaymsg', 'focus', 'left'])
-            elif event['fingers'] == 4:
-                subprocess.call(['swaymsg', 'workspace', 'prev_on_output'])
-        elif event['direction'] == 'right':
-            if event['fingers'] == 3:
+            elif event['direction'] == 'right':
                 subprocess.call(['swaymsg', 'focus', 'right'])
-            elif event['fingers'] == 4:
+        elif event['fingers'] == 4:
+            if event['direction'] == 'left':
+                subprocess.call(['swaymsg', 'workspace', 'prev_on_output'])
+            elif event['direction'] == 'right':
                 subprocess.call(['swaymsg', 'workspace', 'next_on_output'])
 
 
