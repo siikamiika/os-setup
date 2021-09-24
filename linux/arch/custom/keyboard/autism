@@ -6,6 +6,20 @@ xkb_symbols "basic" {
 
     name[Group1]= "Autism (US)";
 
+    // function keys (chromebook)
+    key <FK01> { [ XF86Back, XF86Back, XF86Back, XF86Back ] };
+    key <FK02> { [ XF86Forward, XF86Forward, XF86Forward, XF86Forward ] };
+    key <FK03> { [ XF86Refresh, XF86Refresh, XF86Refresh, XF86Refresh ] };
+    // key <FK04> { [ ] };
+    // key <FK05> { [ ] };
+    key <FK06> { [ XF86KbdBrightnessDown, XF86KbdBrightnessDown, XF86KbdBrightnessDown, XF86KbdBrightnessDown ] };
+    key <FK07> { [ XF86KbdBrightnessUp, XF86KbdBrightnessUp, XF86KbdBrightnessUp, XF86KbdBrightnessUp ] };
+    key <FK08> { [ XF86AudioMute, XF86AudioMute, XF86AudioMute, XF86AudioMute ] };
+    key <FK09> { [ XF86AudioLowerVolume, XF86AudioLowerVolume, XF86AudioLowerVolume, XF86AudioLowerVolume ] };
+    key <FK10> { [ XF86AudioRaiseVolume, XF86AudioRaiseVolume, XF86AudioRaiseVolume, XF86AudioRaiseVolume ] };
+    // key <FK11> { [ ] };
+    // key <FK12> { [ ] };
+
     // top row (numbers)
     key <TLDE> { [ grave, asciitilde, dead_grave, dead_tilde ] };
     key <AE01> { [ 1, exclam, F1, F1 ] };

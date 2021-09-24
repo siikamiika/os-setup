@@ -167,6 +167,10 @@ bindsym XF86AudioLowerVolume exec "amixer set Master 2%-;    pkill -RTMIN+1 i3bl
 bindsym XF86AudioRaiseVolume exec "amixer set Master 2%+;    pkill -RTMIN+1 i3blocks"
 bindsym XF86AudioMute        exec "amixer set Master toggle; pkill -RTMIN+1 i3blocks"
 
+# backlight
+bindsym XF86KbdBrightnessDown exec "light -U 5"
+bindsym XF86KbdBrightnessUp exec "light -A 5"
+
 # dunst
 bindsym Control+space exec dunstctl close
 bindsym Control+Shift+space exec dunstctl close-all
