@@ -146,23 +146,51 @@ class GestureEventSource:
         self._state['events_triggered'] = 0
 
 
+class Sway:
+    def get_focused_app(self):
+        p = subprocess.run(
+            "swaymsg -t get_tree | jq -r '.. | .nodes? | .[]? | select(.focused == true) | .app_id'",
+            stdout=subprocess.PIPE,
+            shell=True
+        )
+        return p.stdout.decode('utf-8').strip()
+
+    def change_focus(self, direction):
+        if direction in ['left', 'right', 'up', 'down']:
+            subprocess.call(['swaymsg', 'focus', direction])
+
+    def change_workspace(self, direction):
+        if direction == 'left':
+            subprocess.call(['swaymsg', 'workspace', 'prev_on_output'])
+        elif direction == 'right':
+            subprocess.call(['swaymsg', 'workspace', 'next_on_output'])
+
+
 def main():
     # single instance hack
-    subprocess.call('pgrep sgi_hack | head -1 | xargs -r pkill -TERM -P', shell=True)
+    subprocess.call('pgrep -x sgi_hack | head -1 | xargs -r pkill -TERM -P', shell=True)
     set_proc_name(b'sgi_hack')
 
+    sway = Sway()
     ges = GestureEventSource()
     for event in ges.listen():
         if event['fingers'] == 3:
             if event['direction'] == 'left':
-                subprocess.call(['swaymsg', 'focus', 'left'])
+                sway.change_focus('left')
             elif event['direction'] == 'right':
-                subprocess.call(['swaymsg', 'focus', 'right'])
+                sway.change_focus('right')
+            # some bug with xf86 keys crashing everything
+            # elif event['direction'] == 'up':
+            #     # if sway.get_focused_app() == 'firefoxdeveloperedition':
+            #     subprocess.call('wtype -M ctrl -P page_up -p page_up -m ctrl', shell=True)
+            # elif event['direction'] == 'down':
+            #     # if sway.get_focused_app() == 'firefoxdeveloperedition':
+            #     subprocess.call('wtype -M ctrl -P page_down -p page_down -m ctrl', shell=True)
         elif event['fingers'] == 4:
             if event['direction'] == 'left':
-                subprocess.call(['swaymsg', 'workspace', 'prev_on_output'])
+                sway.change_workspace('left')
             elif event['direction'] == 'right':
-                subprocess.call(['swaymsg', 'workspace', 'next_on_output'])
+                sway.change_workspace('right')
 
 
 if __name__ == '__main__':
