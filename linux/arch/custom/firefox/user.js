@@ -62,6 +62,7 @@ user_pref("layout.spellcheckDefault", 0);
 // features
 user_pref("middlemouse.paste", false);
 user_pref("general.autoScroll", true);
+user_pref("toolkit.tabbox.switchByScrolling", true);
 
 // mouse modifier key default actions
 // 0: Do nothing; 1: Scroll contents; 2: Go back or forward in the history; 3: Zoom in or out the contents
