@@ -74,6 +74,7 @@ swaylock
 tigervnc
 ttf-font-awesome
 ttf-sarasa-gothic
+vapoursynth
 vim
 wf-recorder
 wl-clipboard
