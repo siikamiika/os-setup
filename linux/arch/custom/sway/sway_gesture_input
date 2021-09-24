@@ -146,8 +146,8 @@ class GestureEventSource:
 
 def main():
     # single instance hack
-    subprocess.call(['killall', 'sway_gesture_input'])
-    set_proc_name(b'sway_gesture_input')
+    subprocess.call('pgrep sgi_hack | head -1 | xargs -r pkill -TERM -P', shell=True)
+    set_proc_name(b'sgi_hack')
 
     ges = GestureEventSource()
     for event in ges.listen():
