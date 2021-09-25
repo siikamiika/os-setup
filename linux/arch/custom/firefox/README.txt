@@ -1,0 +1,5 @@
+- addons
+    - https://addons.mozilla.org/en-US/firefox/addon/tab-session-manager/
+        - hotkeys
+            - セッションを保存 (現在のウィンドウのみ) Shift+Alt+Q
+            - ツールバーポップアップを開く Shift+Alt+W
