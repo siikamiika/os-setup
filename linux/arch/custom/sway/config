@@ -1,5 +1,10 @@
+# vi: ft=config
+
+########################################
+# wm key bindings
+########################################
+
 set $mod Mod4
-font pango:Sarasa Term J 10
 floating_modifier $mod
 
 bindsym $mod+Shift+q kill
@@ -8,7 +13,6 @@ bindsym $mod+Shift+q kill
 bindsym $mod+Return exec alacritty
 bindsym $mod+r exec alacritty --title=launcher -e bash -c 'compgen -c | grep -v fzf | sort -u | fzf --layout=reverse | xargs -r swaymsg -t command exec'
 bindsym $mod+o exec alacritty --title=launcher -e fish -c 'get_focus_prompt | grep " " | fzf -i --layout=reverse | grep -oP "\\t\\K\\d+" | xargs -r -I {} swaymsg "[con_id={}]" focus'
-for_window [title="^launcher$"] floating enable, border none, opacity 0.8
 
 # focus settings
 focus_on_window_activation focus
@@ -108,31 +112,6 @@ bindsym $mod+Control+j resize grow height 50 px or 5 ppt
 bindsym $mod+Control+k resize shrink height 50 px or 5 ppt
 bindsym $mod+Control+l resize grow width 50 px or 5 ppt
 
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
-bar {
-        status_command i3blocks
-        tray_output primary
-        bindsym button6 nop
-        bindsym button7 nop
-}
-
-# hide_edge_borders smart
-
-
-########################################
-# colors
-########################################
-
-# class                 border  backgr. text    indicator child_border
-client.focused          #4c7899 #285577 #ffffff #2e9ef4   #285577
-client.focused_inactive #4c7899 #5f676a #ffffff #484e50   #5f676a
-client.unfocused        #4c7899 #222222 #aaaaaa #292d2e   #222222
-client.urgent           #2f343a #900000 #ffffff #900000   #900000
-client.placeholder      #000000 #0c0c0c #ffffff #000000   #0c0c0c
-
-client.background       #ffffff
-
 
 ########################################
 # custom key bindings
@@ -178,14 +157,26 @@ bindsym Control+grave exec dunstctl history-pop
 
 
 ########################################
-# floating
+# statusbar
 ########################################
 
-for_window [window_role="pop-up"] floating enable
-for_window [class="Pcmanfm"] floating enable
-# this does not work in sway, use workaround
-# for_window [floating] resize set 640 480
-floating_maximum_size 1600 x 900
+bar {
+    swaybar_command waybar
+    # tray_output primary
+    # bindsym button6 nop
+    # bindsym button7 nop
+}
+
+
+########################################
+# workspaces
+########################################
+
+# workspace 1 output DP-1
+# workspace 2 output DP-1
+# workspace 5 output DP-1
+# workspace 3 output DP-2
+# workspace 4 output DP-2
 
 
 ########################################
@@ -204,6 +195,38 @@ for_window [class="Element"] move to workspace 3
 
 for_window [class="Steam"] move to workspace 4
 no_focus [class="Steam"]
+
+
+########################################
+# floating
+########################################
+
+for_window [window_role="pop-up"] floating enable
+for_window [class="Pcmanfm"] floating enable
+for_window [title="^launcher$"] floating enable, border none, opacity 0.8
+# this does not work in sway, use workaround
+# for_window [floating] resize set 640 480
+floating_maximum_size 1600 x 900
+
+
+########################################
+# styles
+########################################
+
+# font
+font pango:Sarasa Term J 10
+
+# colors
+# class                 border  backgr. text    indicator child_border
+client.focused          #4c7899 #285577 #ffffff #2e9ef4   #285577
+client.focused_inactive #4c7899 #5f676a #ffffff #484e50   #5f676a
+client.unfocused        #4c7899 #222222 #aaaaaa #292d2e   #222222
+client.urgent           #2f343a #900000 #ffffff #900000   #900000
+client.placeholder      #000000 #0c0c0c #ffffff #000000   #0c0c0c
+
+client.background       #ffffff
+
+# hide_edge_borders smart
 
 
 ########################################
@@ -236,17 +259,6 @@ for_window [class="Signal"] title_format "<span size='larger' weight='bold' fore
 for_window [class="Mumble"] title_format "<span size='larger' weight='bold' foreground='#FFFFFF'></span>%title"
 for_window [class="TeamSpeak 3"] title_format "<span size='larger' weight='bold' foreground='#2871A8'></span>%title"
 for_window [class="mpv"] title_format "<span size='larger' weight='bold' foreground='#874b87'></span>%title"
-
-
-########################################
-# workspaces
-########################################
-
-# workspace 1 output DP-1
-# workspace 2 output DP-1
-# workspace 5 output DP-1
-# workspace 3 output DP-2
-# workspace 4 output DP-2
 
 
 ########################################
