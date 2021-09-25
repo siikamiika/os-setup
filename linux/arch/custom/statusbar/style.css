@@ -7,8 +7,9 @@
 }
 
 window#waybar {
-    background-color: rgba(43, 48, 59, 0.5);
-    border-bottom: 3px solid rgba(100, 114, 125, 0.5);
+    /* background-color: rgba(43, 48, 59, 0.5); */
+    background-color: #222222;
+    /* border-bottom: 3px solid rgba(100, 114, 125, 0.5); */
     color: #ffffff;
     transition-property: background-color;
     transition-duration: .5s;
@@ -33,12 +34,12 @@ window#waybar.hidden {
 }
 
 #workspaces button.focused {
-    background-color: #64727D;
+    background-color: #285577;
     box-shadow: inset 0 -3px #ffffff;
 }
 
 #workspaces button.urgent {
-    background-color: #eb4d4b;
+    background-color: #900000;
 }
 
 #network,
@@ -52,6 +53,7 @@ window#waybar.hidden {
     padding: 0 10px;
     margin: 0 4px;
     color: #ffffff;
+    background-color: #5f676a;
 }
 
 #window,
@@ -69,9 +71,7 @@ window#waybar.hidden {
     margin-right: 0;
 }
 
-#network {
-    background-color: #64727D;
-}
+#network { }
 
 #network.disconnected {
     background-color: #f53c3c;
@@ -81,32 +81,21 @@ label:focus {
     background-color: #000000;
 }
 
-#cpu {
-    background-color: #64727D;
-}
+#cpu { }
 
-#memory {
-    background-color: #64727D;
-}
+#memory { }
 
-#backlight {
-    background-color: #64727D;
-}
+#backlight { }
 
-#pulseaudio {
-    background-color: #64727D;
-}
+#pulseaudio { }
 
 #pulseaudio.muted {
     background-color: #f53c3c;
 }
 
-#battery {
-    background-color: #64727D;
-}
+#battery { }
 
 #battery.charging, #battery.plugged {
-    color: #ffffff;
     background-color: #26A65B;
 }
 
@@ -119,7 +108,6 @@ label:focus {
 
 #battery.critical:not(.charging) {
     background-color: #f53c3c;
-    color: #ffffff;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: linear;
@@ -127,13 +115,9 @@ label:focus {
     animation-direction: alternate;
 }
 
-#clock {
-    background-color: #64727D;
-}
+#clock { }
 
-#tray {
-    background-color: #64727D;
-}
+#tray { }
 
 #tray > .passive {
     -gtk-icon-effect: dim;
@@ -141,5 +125,5 @@ label:focus {
 
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
-    background-color: #eb4d4b;
+    background-color: #900000;
 }
