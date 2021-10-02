@@ -25,6 +25,7 @@ grim
 hsetroot
 htop
 i3blocks
+imv
 intel-ucode
 iotop
 jq
