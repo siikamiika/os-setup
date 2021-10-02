@@ -127,6 +127,7 @@ bindsym $mod+Control+b exec "number bin"
 bindsym $mod+Control+n exec "number dec"
 bindsym $mod+Control+m exec "number hex"
 
+bindsym Control+Shift+3 exec "screenrecord-area"
 bindsym Control+Shift+4 exec "screenshot-area"
 
 bindsym $mod+Control+space exec "clipboard_tool clear"

@@ -1,5 +1,3 @@
-- video
-    - wf-recorder
 - browser desktop sharing
     - https://shibumi.dev/posts/wayland-in-2021/#screen-sharing
 - upload

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+if pgrep wf-recorder; then
+    killall -SIGINT wf-recorder
+    exit
+fi
+
+DIR=~/Videos/screenrecords
+FILENAME="$(date '+%Y-%m-%d_%H-%M-%S.%N').mp4"
+PREVIEW="/tmp/screenrecord-preview/$FILENAME.png"
+AREA="$(sway_select_area)"
+if [ ! -z "$AREA" ]; then
+    mkdir -p /tmp/screenrecord-preview
+    wf-recorder -g "$AREA" -f "$DIR/$FILENAME"
+    ffmpeg -y -ss 00:00:00.00 -i "$DIR/$FILENAME" -vframes 1 "$PREVIEW"
+    notify-send -i "$PREVIEW" 'screen recording' "$FILENAME"
+fi
