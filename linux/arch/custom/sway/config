@@ -284,5 +284,5 @@ input type:touchpad {
 ########################################
 
 # exec --no-startup-id fcitx5 -d
-exec --no-startup-id dunst
+exec --no-startup-id "killall dunst; dunst"
 exec --no-startup-id sway_gesture_input
