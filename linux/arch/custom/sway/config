@@ -155,6 +155,9 @@ bindsym Control+space exec dunstctl close
 bindsym Control+Shift+space exec dunstctl close-all
 bindsym Control+grave exec dunstctl history-pop
 
+# fcitx5 wayland hack
+bindsym $mod+i exec qt_wayland_input_dialog
+
 
 ########################################
 # statusbar
