@@ -59,6 +59,7 @@ pkgfile
 pulseaudio
 pulseaudio-alsa
 pulseaudio-bluetooth
+python-evdev
 python-pynvim
 python-pyqt5
 python2

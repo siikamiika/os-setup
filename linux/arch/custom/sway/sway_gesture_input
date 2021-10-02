@@ -3,6 +3,8 @@
 import subprocess
 import re
 import time
+import evdev
+from evdev.ecodes import *
 
 
 # https://stackoverflow.com/a/923034
@@ -147,6 +149,7 @@ class GestureEventSource:
                 yield {
                     'direction': direction,
                     'fingers': self._state['fingers'],
+                    'single': max_events is not None,
                 }
             elif self._state[consumed_axis] <= -self._state['threshold']:
                 self._state[consumed_axis] += self._state['threshold']
@@ -155,6 +158,7 @@ class GestureEventSource:
                 yield {
                     'direction': direction,
                     'fingers': self._state['fingers'],
+                    'single': max_events is not None,
                 }
             else:
                 break
@@ -196,23 +200,64 @@ def main():
     subprocess.call('pgrep -x sgi_hack | head -1 | xargs -r pkill -TERM -P', shell=True)
     set_proc_name(b'sgi_hack')
 
+    mouse = evdev.UInput({
+        EV_KEY: [BTN_LEFT, BTN_RIGHT, BTN_MIDDLE, BTN_SIDE, BTN_EXTRA, BTN_FORWARD],
+        EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
+    }, name='sgi-virt-mouse')
+    keyboard = evdev.UInput({
+        EV_KEY: [KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_PAGEUP, KEY_PAGEDOWN, KEY_W, KEY_T, KEY_BACK, KEY_FORWARD],
+    }, name='sgi-virt-keyboard')
     sway = Sway()
     ges = GestureEventSource()
     for event in ges.listen():
         if event['fingers'] == 2:
-            print(event)
+            # precise wheel to discrete event for container tab cycling
+            if event['direction'] == 'right':
+                mouse.write(EV_REL, REL_HWHEEL, 1)
+            elif event['direction'] == 'left':
+                mouse.write(EV_REL, REL_HWHEEL, -1)
+            mouse.syn()
         elif event['fingers'] == 3:
-            if event['direction'] == 'left':
-                sway.change_focus('left')
-            elif event['direction'] == 'right':
-                sway.change_focus('right')
-            # some bug with xf86 keys crashing everything
-            # elif event['direction'] == 'up':
-            #     # if sway.get_focused_app() == 'firefoxdeveloperedition':
-            #     subprocess.call('wtype -M ctrl -P page_up -p page_up -m ctrl', shell=True)
-            # elif event['direction'] == 'down':
-            #     # if sway.get_focused_app() == 'firefoxdeveloperedition':
-            #     subprocess.call('wtype -M ctrl -P page_down -p page_down -m ctrl', shell=True)
+            # overload multi-event/single-event gestures
+            if event['single']:
+                # browser history
+                if event['direction'] == 'left':
+                    keyboard.write(EV_KEY, KEY_BACK, 1)
+                    keyboard.write(EV_KEY, KEY_BACK, 0)
+                    keyboard.syn()
+                elif event['direction'] == 'right':
+                    keyboard.write(EV_KEY, KEY_FORWARD, 1)
+                    keyboard.write(EV_KEY, KEY_FORWARD, 0)
+                    keyboard.syn()
+                # reopen/close tab
+                elif event['direction'] == 'up':
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 1)
+                    keyboard.write(EV_KEY, KEY_LEFTSHIFT, 1)
+                    keyboard.write(EV_KEY, KEY_T, 1)
+                    keyboard.write(EV_KEY, KEY_T, 0)
+                    keyboard.write(EV_KEY, KEY_LEFTSHIFT, 0)
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 0)
+                    keyboard.syn()
+                elif event['direction'] == 'down':
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 1)
+                    keyboard.write(EV_KEY, KEY_W, 1)
+                    keyboard.write(EV_KEY, KEY_W, 0)
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 0)
+                    keyboard.syn()
+            else:
+                # cycle tabs
+                if event['direction'] == 'left':
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 1)
+                    keyboard.write(EV_KEY, KEY_PAGEUP, 1)
+                    keyboard.write(EV_KEY, KEY_PAGEUP, 0)
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 0)
+                    keyboard.syn()
+                elif event['direction'] == 'right':
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 1)
+                    keyboard.write(EV_KEY, KEY_PAGEDOWN, 1)
+                    keyboard.write(EV_KEY, KEY_PAGEDOWN, 0)
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 0)
+                    keyboard.syn()
         elif event['fingers'] == 4:
             if event['direction'] == 'left':
                 sway.change_workspace('left')
