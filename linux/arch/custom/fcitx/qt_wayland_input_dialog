@@ -19,7 +19,7 @@ class InputEchoer(QWidget):
         fcitx5 = subprocess.Popen(['fcitx5'])
         text, ok = QInputDialog.getText(self, 'QT Wayland Input Dialog', '')
         if ok:
-            subprocess.run(['wtype', '--', text])
+            subprocess.run(['wtype', '-s', '500', '--', text])
         fcitx5.kill()
 
 
