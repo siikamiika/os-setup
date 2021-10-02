@@ -37,19 +37,18 @@ class LibinputDebugEventReader:
             \s*
             event\d+
             \s+
-            (?:GESTURE_SWIPE_|POINTER_)
             (?P<type>
-                UPDATE|END|SCROLL_FINGER
+                GESTURE_SWIPE_UPDATE|GESTURE_SWIPE_END|POINTER_SCROLL_FINGER
             )
             \s+
             \+\d*\.\d*s
             \s+
-            (
+            (?:
                 (?P<fingers>
                     \d+
                 )
                 \s*
-                (
+                (?:
                     $
                     |
                     cancelled
@@ -79,19 +78,19 @@ class LibinputDebugEventReader:
         )
         if m:
             event_type = m.group('type')
-            if event_type == 'UPDATE':
+            if event_type == 'GESTURE_SWIPE_UPDATE':
                 return {
                     'type': 'update',
                     'fingers': int(m.group('fingers')),
                     'swipe_x': float(m.group('swipe_x')),
                     'swipe_y': float(m.group('swipe_y')),
                 }
-            elif event_type == 'END':
+            elif event_type == 'GESTURE_SWIPE_END':
                 return {
                     'type': 'end',
                     'fingers': int(m.group('fingers')),
                 }
-            elif event_type == 'SCROLL_FINGER':
+            elif event_type == 'POINTER_SCROLL_FINGER':
                 scroll_x, scroll_y = map(float, (m.group('scroll_x'), m.group('scroll_y')))
                 if scroll_x == scroll_y == 0.0:
                     return {
