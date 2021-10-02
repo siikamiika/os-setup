@@ -1,0 +1,9 @@
+#!/bin/sh
+
+DIR=~/Pictures/screenshots
+FILENAME="$(date '+%Y-%m-%d_%H-%M-%S.%N').png"
+AREA="$(sway_select_area)"
+if [ ! -z "$AREA" ]; then
+    grim -t png -g "$AREA" - | tee "$DIR/$FILENAME" | wl-copy -t 'image/png'
+    notify-send -i "$DIR/$FILENAME" 'screenshot' "$FILENAME"
+fi
