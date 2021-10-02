@@ -35,27 +35,39 @@ class LibinputDebugEventReader:
             \s*
             event\d+
             \s+
-            GESTURE_SWIPE_
+            (?:GESTURE_SWIPE_|POINTER_)
             (?P<type>
-                UPDATE|END
+                UPDATE|END|SCROLL_FINGER
             )
             \s+
             \+\d*\.\d*s
             \s+
-            (?P<fingers>
-                \d+
-            )
-            \s*
             (
-                $
+                (?P<fingers>
+                    \d+
+                )
+                \s*
+                (
+                    $
+                    |
+                    cancelled
+                    |
+                    (?P<swipe_x>
+                        {re_float}
+                    )
+                    \/\s?
+                    (?P<swipe_y>
+                        {re_float}
+                    )
+                )
                 |
-                cancelled
-                |
-                (?P<swipe_x>
+                vert\s+
+                (?P<scroll_y>
                     {re_float}
                 )
-                \/\s?
-                (?P<swipe_y>
+                \/.*?
+                horiz\s+
+                (?P<scroll_x>
                     {re_float}
                 )
             )
@@ -76,6 +88,19 @@ class LibinputDebugEventReader:
                 return {
                     'type': 'end',
                     'fingers': int(m.group('fingers')),
+                }
+            elif event_type == 'SCROLL_FINGER':
+                scroll_x, scroll_y = map(float, (m.group('scroll_x'), m.group('scroll_y')))
+                if scroll_x == scroll_y == 0.0:
+                    return {
+                        'type': 'end',
+                        'fingers': 2,
+                    }
+                return {
+                    'type': 'update',
+                    'fingers': 2,
+                    'swipe_x': scroll_x,
+                    'swipe_y': scroll_y,
                 }
 
 
@@ -174,7 +199,9 @@ def main():
     sway = Sway()
     ges = GestureEventSource()
     for event in ges.listen():
-        if event['fingers'] == 3:
+        if event['fingers'] == 2:
+            print(event)
+        elif event['fingers'] == 3:
             if event['direction'] == 'left':
                 sway.change_focus('left')
             elif event['direction'] == 'right':
