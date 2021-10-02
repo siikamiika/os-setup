@@ -205,7 +205,10 @@ def main():
         EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
     }, name='sgi-virt-mouse')
     keyboard = evdev.UInput({
-        EV_KEY: [KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_PAGEUP, KEY_PAGEDOWN, KEY_W, KEY_T, KEY_BACK, KEY_FORWARD],
+        EV_KEY: [KEY_LEFTCTRL, KEY_LEFTSHIFT,
+                 KEY_PAGEUP, KEY_PAGEDOWN,
+                 KEY_W, KEY_T, KEY_R,
+                 KEY_BACK, KEY_FORWARD],
     }, name='sgi-virt-keyboard')
     sway = Sway()
     ges = GestureEventSource()
@@ -256,6 +259,14 @@ def main():
                     keyboard.write(EV_KEY, KEY_LEFTCTRL, 1)
                     keyboard.write(EV_KEY, KEY_PAGEDOWN, 1)
                     keyboard.write(EV_KEY, KEY_PAGEDOWN, 0)
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 0)
+                    keyboard.syn()
+                elif event['direction'] == 'up':
+                    pass
+                elif event['direction'] == 'down':
+                    keyboard.write(EV_KEY, KEY_LEFTCTRL, 1)
+                    keyboard.write(EV_KEY, KEY_R, 1)
+                    keyboard.write(EV_KEY, KEY_R, 0)
                     keyboard.write(EV_KEY, KEY_LEFTCTRL, 0)
                     keyboard.syn()
         elif event['fingers'] == 4:
