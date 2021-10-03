@@ -6,13 +6,13 @@
     // Choose the order of the modules
     "modules-left": ["sway/workspaces"],
     // "modules-center": ["sway/window"],
-    "modules-right": ["network", "cpu", "memory", "backlight", "pulseaudio", "battery", "clock", "tray"],
+    "modules-right": ["custom/gestures", "network", "cpu", "memory", "backlight", "pulseaudio", "battery", "clock", "tray"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": false,
         "enable-bar-scroll": true,
         "disable-scroll-wraparound": true,
-        "smooth-scrolling-threshold": 5.0,
+        "smooth-scrolling-threshold": 10.0,
         "all-outputs": true,
         "format": "\t{name}\t",
         // "format-icons": {
@@ -20,6 +20,12 @@
         //     "focused": "",
         //     "default": ""
         // }
+    },
+    "custom/gestures": {
+        "format": "{}",
+        "interval": "once",
+        "exec": "cat /tmp/sgi_display",
+        "signal": 9
     },
     "network": {
         // "interface": "wlp2*", // (Optional) To force the use of this interface
