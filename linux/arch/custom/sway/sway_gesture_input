@@ -223,7 +223,7 @@ class Sway:
 
 class SwayGestureInput:
 
-    _THROTTLE_DELAY = 0.05
+    _THROTTLE_DELAY = 0.07
     _PROGRESS_BAR_LENGTH = 30
 
     def __init__(self):
@@ -340,8 +340,8 @@ class SwayGestureInput:
         now = time.time()
         if now - self._throttle_timer < SwayGestureInput._THROTTLE_DELAY:
             return
-        fn()
         self._throttle_timer = now
+        fn()
 
 
 
