@@ -318,6 +318,9 @@ class SwayGestureInput:
                 self._sway.change_workspace('right')
 
     def _handle_status(self, event):
+        # ignore regular scroll
+        if event['fingers'] == 2 and event['axis'] == 'y':
+            return
         l = SwayGestureInput._PROGRESS_BAR_LENGTH
         progress = int(l * abs(event['pos']))
         if event['pos'] < 0.0:
