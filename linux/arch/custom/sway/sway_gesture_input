@@ -2,7 +2,9 @@
 
 import subprocess
 import re
+import json
 import time
+import threading
 import evdev
 from evdev.ecodes import *
 
@@ -202,13 +204,30 @@ class GestureEventSource:
 
 
 class Sway:
-    def get_focused_app(self):
-        p = subprocess.run(
-            "swaymsg -t get_tree | jq -r '.. | .nodes? | .[]? | select(.focused == true) | .app_id'",
-            stdout=subprocess.PIPE,
-            shell=True
+    def __init__(self):
+        self.focused_app = None
+        threading.Thread(target=self._update_focused_app).start()
+
+    def _update_focused_app(self):
+        for app in self._listen_focused_app():
+            self.focused_app = app
+
+    def _listen_focused_app(self):
+        p = subprocess.Popen(
+            ['swaymsg', '-t', 'subscribe', '-m', '[ "window" ]'],
+            stdout=subprocess.PIPE
         )
-        return p.stdout.decode('utf-8').strip()
+        for line in p.stdout:
+            event = json.loads(line)
+            if event['change'] != 'focus':
+                continue
+            container = event['container']
+            if container['app_id']:
+                # Wayland native
+                yield container['app_id']
+            else:
+                # XWayland
+                yield container['window_properties']['class']
 
     def change_focus(self, direction):
         if direction in ['left', 'right', 'up', 'down']:
