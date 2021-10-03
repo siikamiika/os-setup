@@ -271,9 +271,9 @@ class SwayGestureInput:
         self._virtual_input = VirtualInput({
             EV_KEY: [BTN_LEFT, BTN_RIGHT, BTN_MIDDLE,
                      BTN_SIDE, BTN_EXTRA, BTN_FORWARD,
-                     KEY_LEFTCTRL, KEY_LEFTSHIFT,
+                     KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTMETA,
                      KEY_PAGEUP, KEY_PAGEDOWN,
-                     KEY_W, KEY_T, KEY_R,
+                     KEY_W, KEY_T, KEY_R, KEY_F,
                      KEY_BACK, KEY_FORWARD],
             EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
         }, name='sgi-virt-input')
@@ -315,8 +315,9 @@ class SwayGestureInput:
                     self._virtual_input.key(KEY_PAGEUP, [KEY_LEFTCTRL])
                 elif event['direction'] == 'right':
                     self._virtual_input.key(KEY_PAGEDOWN, [KEY_LEFTCTRL])
+                # toggle full screen
                 elif event['direction'] == 'up':
-                    pass
+                    self._virtual_input.key(KEY_F, [KEY_LEFTMETA])
                 # reload
                 elif event['direction'] == 'down':
                     self._virtual_input.key(KEY_R, [KEY_LEFTCTRL])

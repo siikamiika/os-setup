@@ -281,6 +281,12 @@ input type:keyboard {
     repeat_rate 25
 }
 
+input "1:1:sgi-virt-input" {
+    xkb_layout us
+    repeat_delay 300
+    repeat_rate 25
+}
+
 input type:touchpad {
     click_method clickfinger
 }
