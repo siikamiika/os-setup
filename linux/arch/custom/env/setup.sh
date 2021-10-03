@@ -22,3 +22,6 @@ grep -qF 'IMSETTINGS_MODULE=fcitx' /etc/environment || echo 'IMSETTINGS_MODULE=f
 grep -qF 'QT_QPA_PLATFORM=wayland' /etc/environment || echo 'QT_QPA_PLATFORM=wayland' | sudo tee -a /etc/environment > /dev/null
 grep -qF 'QT_WAYLAND_DISABLE_WINDOWDECORATION="1"' /etc/environment || echo 'QT_WAYLAND_DISABLE_WINDOWDECORATION="1"' | sudo tee -a /etc/environment > /dev/null
 grep -qF '_JAVA_AWT_WM_NONREPARENTING=1' /etc/environment || echo '_JAVA_AWT_WM_NONREPARENTING=1' | sudo tee -a /etc/environment > /dev/null
+
+# screen sharing
+grep -qF 'XDG_CURRENT_DESKTOP=sway' /etc/environment || echo 'XDG_CURRENT_DESKTOP=sway' | sudo tee -a /etc/environment > /dev/null

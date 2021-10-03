@@ -208,6 +208,8 @@ no_focus [class="Steam"]
 for_window [window_role="pop-up"] floating enable
 for_window [class="Pcmanfm"] floating enable
 for_window [title="^launcher$"] floating enable, border none, opacity 0.8
+for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0
+no_focus [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"]
 # this does not work in sway, use workaround
 # for_window [floating] resize set 640 480
 floating_maximum_size 1600 x 900
@@ -287,3 +289,4 @@ input type:touchpad {
 # exec --no-startup-id fcitx5 -d
 exec --no-startup-id "killall dunst; dunst"
 exec --no-startup-id sway_gesture_input
+exec --no-startup-id /usr/lib/xdg-desktop-portal-wlr -r
