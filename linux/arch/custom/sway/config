@@ -289,5 +289,4 @@ input type:touchpad {
 exec --no-startup-id "systemctl --user import-environment WAYLAND_DISPLAY"
 
 # exec --no-startup-id fcitx5 -d
-exec --no-startup-id "killall dunst; dunst"
 exec --no-startup-id sway_gesture_input
