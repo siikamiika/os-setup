@@ -4,7 +4,9 @@ import subprocess
 import re
 import json
 import time
+import math
 import threading
+import queue
 import evdev
 from evdev.ecodes import *
 
@@ -40,7 +42,7 @@ class LibinputDebugEventReader:
             event\d+
             \s+
             (?P<type>
-                GESTURE_SWIPE_UPDATE|GESTURE_SWIPE_END|POINTER_SCROLL_FINGER
+                GESTURE_SWIPE_UPDATE|GESTURE_SWIPE_END|POINTER_SCROLL_FINGER|GESTURE_PINCH_UPDATE|GESTURE_PINCH_END
             )
             \s+
             \+\d*\.\d*s
@@ -62,6 +64,16 @@ class LibinputDebugEventReader:
                     (?P<swipe_y>
                         {re_float}
                     )
+                    (?:
+                        \s*\(.*?\)\s*
+                        (?P<pinch_zoom>
+                            {re_float}
+                        )
+                        \s*@\s*
+                        (?P<pinch_rotate>
+                            {re_float}
+                        )
+                    )?
                 )
                 |
                 vert\s+
@@ -80,14 +92,19 @@ class LibinputDebugEventReader:
         )
         if m:
             event_type = m.group('type')
-            if event_type == 'GESTURE_SWIPE_UPDATE':
+            if event_type in ['GESTURE_SWIPE_UPDATE', 'GESTURE_PINCH_UPDATE']:
+                pinch_zoom, pinch_rotate = map(
+                    lambda x: float(m.group(x)) if m.group(x) is not None else None,
+                    ['pinch_zoom', 'pinch_rotate'])
                 return {
                     'type': 'update',
                     'fingers': int(m.group('fingers')),
                     'swipe_x': float(m.group('swipe_x')),
                     'swipe_y': float(m.group('swipe_y')),
+                    'pinch_zoom': pinch_zoom,
+                    'pinch_rotate': pinch_rotate,
                 }
-            elif event_type == 'GESTURE_SWIPE_END':
+            elif event_type in ['GESTURE_SWIPE_END', 'GESTURE_PINCH_END']:
                 return {
                     'type': 'end',
                     'fingers': int(m.group('fingers')),
@@ -104,6 +121,8 @@ class LibinputDebugEventReader:
                     'fingers': 2,
                     'swipe_x': scroll_x,
                     'swipe_y': scroll_y,
+                    'pinch_zoom': None,
+                    'pinch_rotate': None,
                 }
 
 
@@ -118,6 +137,9 @@ class GestureEventSource:
             'fingers': None,
             'pos_x': 0.0,
             'pos_y': 0.0,
+            '_last_zoom': None,
+            'pinch_zoom': None,
+            'pinch_rotate': None,
             'threshold': GestureEventSource.EVENT_THRESHOLD,
             'events_triggered':  0,
         }
@@ -130,41 +152,61 @@ class GestureEventSource:
                 if self._state['started'] is None:
                     self._state['started'] = time.time()
                     self._state['fingers'] = event['fingers']
-                self._state['pos_x'] += event['swipe_x']
-                self._state['pos_y'] += event['swipe_y']
-                yield from self._consume()
+                if event['pinch_zoom'] is not None and event['pinch_rotate'] is not None:
+                    # the value starts from 1 and can go above or below it
+                    # depending on the distance of fingers relative to the
+                    # original position, so log2 cur/prev makes sense here
+                    # when converting to a consumable, relative value
+                    last_zoom = self._state['_last_zoom'] if self._state['_last_zoom'] is not None else event['pinch_zoom']
+                    if self._state['pinch_zoom'] is None:
+                        self._state['pinch_zoom'] = 0.0
+                    self._state['pinch_zoom'] += math.log2(event['pinch_zoom'] / last_zoom)
+                    self._state['_last_zoom'] = event['pinch_zoom']
+                    yield from self._consume_zoom()
+                    # rotate is more straightforward
+                    if self._state['pinch_rotate'] is None:
+                        self._state['pinch_rotate'] = 0.0
+                    self._state['pinch_rotate'] += event['pinch_rotate']
+                    yield from self._consume_rotate()
+                else:
+                    self._state['pos_x'] += event['swipe_x']
+                    self._state['pos_y'] += event['swipe_y']
+                    yield from self._consume_swipe()
             elif event['type'] == 'end':
-                if self._state['events_triggered'] == 0:
-                    self._state['threshold'] *= GestureEventSource.RELEASE_THRESHOLD_FACTOR
-                    yield from self._consume(max_events=1)
+                if self._state['pinch_rotate'] is not None and self._state['pinch_zoom'] is not None:
+                    pass
+                else:
+                    if self._state['events_triggered'] == 0:
+                        self._state['threshold'] *= GestureEventSource.RELEASE_THRESHOLD_FACTOR
+                        yield from self._consume_swipe(max_events=1)
                 self._reset_state()
 
-            yield from self._report_status()
+            yield self._report_status()
 
     def _report_status(self):
         if abs(self._state['pos_x']) > 0.0:
-            yield {
+            return {
                 'type': 'status',
                 'axis': 'x',
                 'fingers': self._state['fingers'],
                 'pos': self._state['pos_x'] / self._state['threshold'],
             }
         elif abs(self._state['pos_y']) > 0.0:
-            yield {
+            return {
                 'type': 'status',
                 'axis': 'y',
                 'fingers': self._state['fingers'],
                 'pos': self._state['pos_y'] / self._state['threshold'],
             }
         else:
-            yield {
+            return {
                 'type': 'status',
                 'axis': None,
                 'fingers': None,
                 'pos': 0.0,
             }
 
-    def _consume(self, max_events=None):
+    def _consume_swipe(self, max_events=None):
         other_axis, consumed_axis = sorted(['pos_x', 'pos_y'], key=lambda a: abs(self._state[a]))
         self._state[other_axis] = 0.0
         while True:
@@ -194,11 +236,62 @@ class GestureEventSource:
                 if max_events >= self._state['events_triggered']:
                     break
 
+    def _consume_zoom(self):
+        # TODO const
+        while True:
+            if self._state['pinch_zoom'] >= 0.2:
+                self._state['pinch_zoom'] -= 0.2
+                self._state['events_triggered'] += 1
+                yield {
+                    'type': 'gesture',
+                    'direction': 'zoom_in',
+                    'fingers': self._state['fingers'],
+                    'single': False,
+                }
+            elif self._state['pinch_zoom'] <= -0.2:
+                self._state['pinch_zoom'] += 0.2
+                self._state['events_triggered'] += 1
+                yield {
+                    'type': 'gesture',
+                    'direction': 'zoom_out',
+                    'fingers': self._state['fingers'],
+                    'single': False,
+                }
+            else:
+                break
+
+    def _consume_rotate(self):
+        # TODO const
+        while True:
+            if self._state['pinch_rotate'] >= 5.0:
+                self._state['pinch_rotate'] -= 5.0
+                self._state['events_triggered'] += 1
+                yield {
+                    'type': 'gesture',
+                    'direction': 'rotate_cw',
+                    'fingers': self._state['fingers'],
+                    'single': False,
+                }
+            elif self._state['pinch_rotate'] <= -5.0:
+                self._state['pinch_rotate'] += 5.0
+                self._state['events_triggered'] += 1
+                yield {
+                    'type': 'gesture',
+                    'direction': 'rotate_ccw',
+                    'fingers': self._state['fingers'],
+                    'single': False,
+                }
+            else:
+                break
+
     def _reset_state(self):
         self._state['fingers'] = None
         self._state['started'] = None
         self._state['pos_x'] = 0.0
         self._state['pos_y'] = 0.0
+        self._state['_last_zoom'] = None
+        self._state['pinch_zoom'] = None
+        self._state['pinch_rotate'] = None
         self._state['threshold'] = GestureEventSource.EVENT_THRESHOLD
         self._state['events_triggered'] = 0
 
@@ -227,7 +320,10 @@ class Sway:
                 yield container['app_id']
             else:
                 # XWayland
-                yield container['window_properties']['class']
+                if 'class' not in container['window_properties']:
+                    yield 'xwayland'
+                else:
+                    yield container['window_properties']['class']
 
     def change_focus(self, direction):
         if direction in ['left', 'right', 'up', 'down']:
@@ -286,6 +382,8 @@ class SwayGestureInput:
                      KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTMETA, KEY_LEFTALT,
                      KEY_PAGEUP, KEY_PAGEDOWN, KEY_TAB,
                      KEY_W, KEY_T, KEY_R, KEY_F, KEY_Q,
+                     KEY_H, KEY_J, KEY_K, KEY_L,
+                     KEY_1, KEY_2,
                      KEY_BACK, KEY_FORWARD, KEY_LEFT, KEY_RIGHT],
             EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
         }, name='sgi-virt-input')
@@ -293,6 +391,9 @@ class SwayGestureInput:
         self._ges = GestureEventSource()
 
         self._throttle_timer = time.time()
+
+        self._status_queue = queue.Queue()
+        threading.Thread(target=self._read_status_updates).start()
 
     def start(self):
         for event in self._ges.listen():
@@ -305,9 +406,27 @@ class SwayGestureInput:
         if event['fingers'] == 2:
             # precise wheel to discrete event for container tab cycling
             if event['direction'] == 'right':
-                self._virtual_input.rel(REL_HWHEEL, 1)
+                if self._sway.focused_app == 'imv':
+                    self._virtual_input.key(KEY_L, wait_time=0.01)
+                else:
+                    self._virtual_input.rel(REL_HWHEEL, 1)
             elif event['direction'] == 'left':
-                self._virtual_input.rel(REL_HWHEEL, -1)
+                if self._sway.focused_app == 'imv':
+                    self._virtual_input.key(KEY_H, wait_time=0.01)
+                else:
+                    self._virtual_input.rel(REL_HWHEEL, -1)
+            elif event['direction'] == 'up':
+                if self._sway.focused_app == 'imv':
+                    self._virtual_input.key(KEY_K, wait_time=0.01)
+            elif event['direction'] == 'down':
+                if self._sway.focused_app == 'imv':
+                    self._virtual_input.key(KEY_J, wait_time=0.01)
+            elif event['direction'] == 'rotate_ccw':
+                self._virtual_input.key(KEY_1, wait_time=0.01)
+            elif event['direction'] == 'rotate_cw':
+                self._virtual_input.key(KEY_2, wait_time=0.01)
+            else:
+                print(event)
         elif event['fingers'] == 3:
             # overload multi-event/single-event gestures
             if event['single']:
@@ -355,6 +474,8 @@ class SwayGestureInput:
                 # reload
                 elif event['direction'] == 'down':
                     self._virtual_input.key(KEY_R, [KEY_LEFTCTRL])
+                else:
+                    print(event)
         elif event['fingers'] == 4:
             if event['direction'] == 'left':
                 self._sway.change_workspace('left')
@@ -372,11 +493,19 @@ class SwayGestureInput:
         else:
             progress_bar = ' ' * l + '█' * progress + ' ' * (l - progress)
         if event['axis'] == 'x':
-            self._throttle(lambda: self._render_status(progress_bar + f' {event["fingers"]}'))
+            self._status_queue.put(progress_bar + f' {event["fingers"]}')
         elif event['axis'] == 'y':
-            self._throttle(lambda: self._render_status(progress_bar + f' {event["fingers"]}'))
+            self._status_queue.put(progress_bar + f' {event["fingers"]}')
         else:
-            self._render_status('')
+            self._status_queue.put('')
+
+    def _read_status_updates(self):
+        while True:
+            status = self._status_queue.get()
+            if status:
+                self._throttle(lambda: self._render_status(status))
+            else:
+                self._render_status(status)
 
     def _render_status(self, content):
         with open('/tmp/sgi_display', 'w') as f:
