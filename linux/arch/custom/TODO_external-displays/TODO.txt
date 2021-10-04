@@ -1,0 +1,3 @@
+- kanshi
+    - https://github.com/emersion/kanshi
+    - https://github.com/shibumi/dotfiles/blob/master/.config/kanshi/config
