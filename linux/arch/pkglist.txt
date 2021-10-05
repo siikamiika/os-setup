@@ -43,6 +43,7 @@ man-db
 meld
 mpv
 neovim
+net-tools
 networkmanager
 nodejs
 noto-fonts-cjk
@@ -77,12 +78,12 @@ sudo
 sway
 swaybg
 swaylock
-tigervnc
 ttf-font-awesome
 ttf-sarasa-gothic
 vapoursynth
 vim
 waybar
+wayvnc
 wf-recorder
 wl-clipboard
 wlroots
