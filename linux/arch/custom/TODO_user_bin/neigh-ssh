@@ -1,0 +1,19 @@
+#!/bin/bash
+
+ip="$(choose_line 'Select SSH target neighbor: ' 'ip neigh' | grep -oh '[^ ]*' | head -1)"
+ssh_command="ssh"
+
+echo "Enter 0 or more forwarded ports one per line:"
+while read port; do
+    if [ -z "$port" ]; then
+        break
+    else
+        ssh_command+=" -L $port:localhost:$port"
+    fi
+done
+
+echo "Enter username:"
+read username
+ssh_command+=" $username@$ip"
+
+$ssh_command

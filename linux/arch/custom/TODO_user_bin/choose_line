@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PS3="$1"
+declare -a lines
+while read i; do
+    lines=( "${lines[@]}" "$i" )
+done < <($2)
+select line in "${lines[@]}"
+do
+    echo "$line"
+    break
+done
