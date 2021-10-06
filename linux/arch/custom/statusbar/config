@@ -13,7 +13,7 @@
         "enable-bar-scroll": true,
         "disable-scroll-wraparound": true,
         "smooth-scrolling-threshold": 10.0,
-        "all-outputs": true,
+        "all-outputs": false,
         "format": "\t{name}\t",
         // "format-icons": {
         //     "urgent": "",
