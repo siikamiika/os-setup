@@ -227,10 +227,10 @@ class Sway:
                 yield container['app_id']
             else:
                 # XWayland
-                if 'class' not in container['window_properties']:
-                    yield 'xwayland'
-                else:
+                try:
                     yield container['window_properties']['class']
+                except (KeyError, TypeError):
+                    yield 'xwayland'
 
     def change_focus(self, direction):
         if direction in ['left', 'right', 'up', 'down']:
