@@ -4,18 +4,17 @@
 
 install_yay ()
 {
-	sudo pacman -S fakeroot
-	mkdir -p yaybuild
-	cd yaybuild
-	curl -o PKGBUILD 'https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=yay'
-	makepkg -si
-	cd ..
-	rm -rf yaybuild
+    sudo pacman -S fakeroot
+    local dir=/tmp/yaybuild
+    mkdir -p "$dir"
+    curl -o "$dir/PKGBUILD" 'https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=yay'
+    (cd "$dir" && makepkg -si)
+    rm -rf "$dir"
 }
 
 setup_software ()
 {
-	echo TODO
+    echo TODO
 }
 
 install_yay
