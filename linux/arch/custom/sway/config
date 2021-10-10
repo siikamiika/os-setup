@@ -276,6 +276,7 @@ for_window [class="Signal"] title_format "<span size='larger' weight='bold' fore
 for_window [class="Mumble"] title_format "<span size='larger' weight='bold' foreground='#FFFFFF'></span>%title"
 for_window [class="TeamSpeak 3"] title_format "<span size='larger' weight='bold' foreground='#2871A8'></span>%title"
 for_window [class="mpv"] title_format "<span size='larger' weight='bold' foreground='#874b87'></span>%title"
+for_window [app_id="mpv"] title_format "<span size='larger' weight='bold' foreground='#874b87'></span>%title"
 
 
 ########################################
