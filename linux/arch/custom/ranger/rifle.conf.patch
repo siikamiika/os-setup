@@ -1,15 +1,15 @@
-262,267d261
-< #-------------------------------------------
-< # Generic file openers
-< #-------------------------------------------
+265,266c265,267
 < label open, has xdg-open = xdg-open -- "$@"
 < label open, has open     = open -- "$@"
-< 
-271a266,272
-> 
-> #-------------------------------------------
-> # Generic file openers
-> #-------------------------------------------
+---
 > label open = ${VISUAL:-$EDITOR} -- "$@"
 > # label open, has xdg-open = xdg-open -- "$@"
 > # label open, has open     = open -- "$@"
+269,271c270,272
+<               !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = ask
+< label editor, !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = ${VISUAL:-$EDITOR} -- "$@"
+< label pager,  !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = "$PAGER" -- "$@"
+---
+>               # !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = ask
+> # label editor, !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = ${VISUAL:-$EDITOR} -- "$@"
+> # label pager,  !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = "$PAGER" -- "$@"
