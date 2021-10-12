@@ -1,0 +1,15 @@
+262,267d261
+< #-------------------------------------------
+< # Generic file openers
+< #-------------------------------------------
+< label open, has xdg-open = xdg-open -- "$@"
+< label open, has open     = open -- "$@"
+< 
+271a266,272
+> 
+> #-------------------------------------------
+> # Generic file openers
+> #-------------------------------------------
+> label open = ${VISUAL:-$EDITOR} -- "$@"
+> # label open, has xdg-open = xdg-open -- "$@"
+> # label open, has open     = open -- "$@"
