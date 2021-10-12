@@ -3,6 +3,7 @@
 // ---------------------
 user_pref("browser.sessionstore.warnOnQuit", true);
 user_pref("browser.showQuitWarning", true);
+user_pref("browser.tabs.warnOnClose", true);
 
 
 // ---------------------
