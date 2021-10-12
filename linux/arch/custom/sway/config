@@ -96,8 +96,8 @@ bindsym $mod+Mod1+h move workspace to output left
 bindsym $mod+Mod1+l move workspace to output right
 
 # scratchpad
-#bindsym $mod+g move scratchpad
-#bindsym $mod+d scratchpad show
+bindsym $mod+g move scratchpad
+bindsym $mod+d scratchpad show
 #bindcode 132 scratchpad show
 
 # reload the configuration file
