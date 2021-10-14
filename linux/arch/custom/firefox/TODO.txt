@@ -4,3 +4,4 @@
 - userChrome.css
 - swipe history https://bugzilla.mozilla.org/show_bug.cgi?id=1348786#c14
 - browser.display.*color
+- https://github.com/erichgoldman/add-url-to-window-title (firefox-tab-control)
