@@ -3,6 +3,7 @@ alacritty
 alsa-utils
 base
 bash-completion
+bind
 binutils
 bluez
 bluez-utils
@@ -50,6 +51,7 @@ noto-fonts-cjk
 noto-fonts-emoji
 openbox
 openssh
+osquery
 p7zip
 pacman-contrib
 patch
@@ -71,8 +73,10 @@ rime-cantonese
 ripgrep
 rofi
 slurp
+socat
 spotblock-git
 spotify
+sqlitebrowser
 sshfs
 sudo
 sway
