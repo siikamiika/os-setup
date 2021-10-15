@@ -25,12 +25,12 @@ install_tab_control()
     local nmh_dir=~/.mozilla/native-messaging-hosts
     [ ! -d "$vc_dir" ] && git clone git@github.com:siikamiika/firefox-tab-control.git "$vc_dir"
     mkdir -p "$nmh_dir"
-    # TODO no hard coded path in json .path
-    cp "$vc_dir/tab_control.json" "$nmh_dir/"
     (
         cd "$vc_dir/" &&
         ./build.sh &&
-        sudo cp tab_control@miika.es.xpi /usr/lib/firefox-developer-edition/browser/extensions/
+        cp tab_control.json "$nmh_dir/" &&
+        sudo cp tab_control@miika.es.xpi /usr/lib/firefox-developer-edition/browser/extensions/ &&
+        sudo cp tab_control.py "$(jq -r '.path' tab_control.json)"
     )
 }
 
