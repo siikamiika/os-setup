@@ -135,7 +135,7 @@ bindsym $mod+Control+space exec "clipboard_tool clear"
 bindsym $mod+Control+v exec "clipboard_tool primary_to_clipboard"
 bindsym $mod+Control+i exec "clipboard_tool clipboard_to_primary"
 
-bindsym $mod+t exec socat - "UNIX-CONNECT:/run/user/$(id -u $USER)/firefox_tab_control.sock"
+bindsym $mod+t exec socat - "UNIX-CONNECT:/run/user/$(id -u)/firefox_tab_control.sock"
 
 bindsym $mod+Control+Return exec firefox-developer-edition
 bindsym $mod+Control+p exec firefox-developer-edition --private-window
