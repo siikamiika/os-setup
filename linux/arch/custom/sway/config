@@ -9,11 +9,6 @@ floating_modifier $mod
 
 bindsym $mod+Shift+q kill
 
-# launcher
-bindsym $mod+Return exec alacritty
-bindsym $mod+r exec 'compgen -c | sort -u | fzf-launcher | xargs -r swaymsg -t command exec'
-bindsym $mod+o exec 'get_focus_prompt | fzf-launcher | grep -oP "\\t\\K\\d+" | xargs -r -I {} swaymsg "[con_id={}]" focus'
-
 # change focus
 bindsym $mod+h focus left
 bindsym $mod+j focus down
@@ -118,27 +113,37 @@ bindsym $mod+Control+l resize grow width 50 px or 5 ppt
 # custom key bindings
 ########################################
 
+# disable dual-axis scrolling in titlebar
 bindsym button6 nop
 bindsym button7 nop
 
+# launcher
+bindsym $mod+r exec 'compgen -c | sort -u | fzf-launcher | xargs -r swaymsg -t command exec'
+bindsym $mod+o exec 'get_focus_prompt | fzf-launcher | grep -oP "\\t\\K\\d+" | xargs -r -I {} swaymsg "[con_id={}]" focus'
+bindsym $mod+t exec socat - "UNIX-CONNECT:/run/user/$(id -u)/firefox_tab_control.sock"
+
+# new instances of frequently used software
+bindsym $mod+Return exec alacritty
+bindsym $mod+Control+Return exec firefox-developer-edition
+bindsym $mod+Control+p exec firefox-developer-edition --private-window
+
+# lock screen
 bindsym $mod+semicolon exec "swaylock -c 222222"
 
+# analyze selected text
 bindsym $mod+Control+c exec "codepoint"
 bindsym $mod+Control+b exec "number bin"
 bindsym $mod+Control+n exec "number dec"
 bindsym $mod+Control+m exec "number hex"
 
+# screen capture
 bindsym Control+Shift+3 exec "screenrecord-area"
 bindsym Control+Shift+4 exec "screenshot-area"
 
+# clipboard
 bindsym $mod+Control+space exec "clipboard_tool clear"
 bindsym $mod+Control+v exec "clipboard_tool primary_to_clipboard"
 bindsym $mod+Control+i exec "clipboard_tool clipboard_to_primary"
-
-bindsym $mod+t exec socat - "UNIX-CONNECT:/run/user/$(id -u)/firefox_tab_control.sock"
-
-bindsym $mod+Control+Return exec firefox-developer-edition
-bindsym $mod+Control+p exec firefox-developer-edition --private-window
 
 # reset latency
 bindsym XF86AudioPlay exec "pacmd set-card-profile bluez_card.4C_87_5D_0D_AC_82 off; pacmd set-card-profile bluez_card.4C_87_5D_0D_AC_82 a2dp_sink"
