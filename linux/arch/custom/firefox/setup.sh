@@ -34,5 +34,20 @@ install_tab_control()
     )
 }
 
+set_default_browser()
+{
+    local src=/usr/share/applications/firefox-developer-edition.desktop
+    local dest_dir=~/.local/share/applications
+    local dest_entry=firefox-developer-edition-new-window.desktop
+    local dest="$dest_dir/$dest_entry"
+    mkdir -p "$dest_dir"
+    cp "$src" "$dest"
+    sed \
+        -e '/^Exec=\/usr\/lib\/firefox-developer-edition\/firefox %u$/c Exec=\/usr\/lib\/firefox-developer-edition\/firefox --new-window %u' \
+        -i "$dest"
+    xdg-settings set default-web-browser "$dest_entry"
+}
+
 install_user_js
 install_tab_control
+set_default_browser
