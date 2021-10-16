@@ -1,4 +1,3 @@
 - gestures
     - indicator
         - https://github.com/francma/wob
-- generic fzf launcher tool using stdin/stdout and /tmp

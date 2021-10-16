@@ -11,8 +11,8 @@ bindsym $mod+Shift+q kill
 
 # launcher
 bindsym $mod+Return exec alacritty
-bindsym $mod+r exec alacritty --title=launcher -e bash -c 'compgen -c | grep -v fzf | sort -u | fzf --layout=reverse | xargs -r swaymsg -t command exec'
-bindsym $mod+o exec alacritty --title=launcher -e fish -c 'get_focus_prompt | grep " " | fzf -i --layout=reverse | grep -oP "\\t\\K\\d+" | xargs -r -I {} swaymsg "[con_id={}]" focus'
+bindsym $mod+r exec 'compgen -c | grep -v fzf | sort -u | fzf-launcher | xargs -r swaymsg -t command exec'
+bindsym $mod+o exec 'get_focus_prompt | grep " " | fzf-launcher | grep -oP "\\t\\K\\d+" | xargs -r -I {} swaymsg "[con_id={}]" focus'
 
 # change focus
 bindsym $mod+h focus left

@@ -1,0 +1,26 @@
+#!/bin/sh
+
+gen_random_string()
+{
+    hexdump -n 16 -e '4/4 "%08x" 1 "\n"' /dev/urandom
+}
+
+dir="/run/user/$(id -u)/launcher-comm"
+mkdir -p "$dir"
+
+input_fifo="$dir/$(gen_random_string).fifo"
+output_fifo="$dir/$(gen_random_string).fifo"
+mkfifo -m 600 "$input_fifo"
+mkfifo -m 600 "$output_fifo"
+
+# redirect stdin to $input_fifo
+cat <&0 > "$input_fifo" &
+
+alacritty \
+    --title=launcher \
+    -e bash \
+    -c "cat $input_fifo | fzf --layout=reverse > $output_fifo" \
+    &
+
+cat "$output_fifo"
+rm "$input_fifo" "$output_fifo"
