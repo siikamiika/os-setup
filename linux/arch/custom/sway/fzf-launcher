@@ -8,19 +8,19 @@ gen_random_string()
 dir="/run/user/$(id -u)/launcher-comm"
 mkdir -p "$dir"
 
-input_fifo="$dir/$(gen_random_string).fifo"
-output_fifo="$dir/$(gen_random_string).fifo"
-mkfifo -m 600 "$input_fifo"
-mkfifo -m 600 "$output_fifo"
+export INPUT_FIFO="$dir/$(gen_random_string).fifo"
+export OUTPUT_FIFO="$dir/$(gen_random_string).fifo"
+mkfifo -m 600 "$INPUT_FIFO"
+mkfifo -m 600 "$OUTPUT_FIFO"
 
-# redirect stdin to $input_fifo
-cat <&0 > "$input_fifo" &
+# redirect stdin to $INPUT_FIFO
+cat <&0 > "$INPUT_FIFO" &
 
 alacritty \
     --title=launcher \
     -e bash \
-    -c "cat $input_fifo | fzf --layout=reverse > $output_fifo" \
+    -c 'cat "$INPUT_FIFO" | fzf --layout=reverse > "$OUTPUT_FIFO"' \
     &
 
-cat "$output_fifo"
-rm "$input_fifo" "$output_fifo"
+cat "$OUTPUT_FIFO"
+rm "$INPUT_FIFO" "$OUTPUT_FIFO"
