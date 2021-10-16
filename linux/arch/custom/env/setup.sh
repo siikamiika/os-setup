@@ -4,6 +4,7 @@ echo "Configuring environment"
 
 # default software
 grep -qF 'EDITOR="/usr/bin/nvim"' /etc/environment || echo 'EDITOR="/usr/bin/nvim"' | sudo tee -a /etc/environment > /dev/null
+grep -qF 'DMENU="/usr/local/bin/fzf-launcher"' /etc/environment || echo 'DMENU="/usr/local/bin/fzf-launcher"' | sudo tee -a /etc/environment > /dev/null
 
 # firefox
 grep -qF 'MOZ_ENABLE_WAYLAND=1' /etc/environment || echo 'MOZ_ENABLE_WAYLAND=1' | sudo tee -a /etc/environment > /dev/null
