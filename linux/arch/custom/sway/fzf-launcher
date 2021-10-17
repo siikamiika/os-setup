@@ -19,7 +19,7 @@ cat <&0 > "$INPUT_FIFO" &
 alacritty \
     --title=launcher \
     -e bash \
-    -c 'cat "$INPUT_FIFO" | fzf --layout=reverse > "$OUTPUT_FIFO"' \
+    -c 'cat "$INPUT_FIFO" | fzf --ansi --layout=reverse > "$OUTPUT_FIFO"' \
     &
 
 cat "$OUTPUT_FIFO"
