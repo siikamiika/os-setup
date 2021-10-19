@@ -215,7 +215,7 @@ for_window [class="Steam"] move to workspace 4
 
 for_window [window_role="pop-up"] floating enable
 for_window [class="Pcmanfm"] floating enable
-for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resize set 1600 480, move position 160 0
+for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resize set 80 ppt 30 ppt, move position 10 ppt 0
 for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0
 # this does not work in sway, use workaround
 # for_window [floating] resize set 640 480
