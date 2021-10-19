@@ -21,5 +21,5 @@ swaymsg -t get_tree | jq -c -r '
         elif $app == "Spotify" then ""
         else "" end
     ) as $app_icon
-    | ($parent.num|tostring) + "  " + $app_icon + "  " + .name + "\t\t\t\t\t\t\t\t\t\t" + $app + "\t" + (.id|tostring)
+    | ($parent.num|tostring) + "  " + $app_icon + "  " + .name + "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" + $app + "\t" + (.id|tostring)
     '
