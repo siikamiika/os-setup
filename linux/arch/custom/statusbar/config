@@ -47,7 +47,7 @@
     },
     "custom/swap": {
         "format": "{}% ",
-        "exec": "free | grep Swap | awk '{num = ($3 \/ $2) * 100} END {print sprintf(\"%.0f\", ($3 \/ $2) * 100)}'",
+        "exec": "free | grep Swap | awk '{print sprintf(\"%.0f\", ($3 \/ $2) * 100)}'",
         "interval": 10
     },
     "backlight": {
