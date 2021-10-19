@@ -6,7 +6,7 @@
     // Choose the order of the modules
     "modules-left": ["sway/workspaces"],
     // "modules-center": ["sway/window"],
-    "modules-right": ["custom/gestures", "network", "cpu", "memory", "backlight", "pulseaudio", "battery", "clock", "tray"],
+    "modules-right": ["custom/gestures", "network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "clock", "tray"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": false,
@@ -44,6 +44,11 @@
         "format": "{}% ",
         "tooltip": true,
         "on-click": "alacritty -e fish -c htop",
+    },
+    "custom/swap": {
+        "format": "{}% ",
+        "exec": "free | grep Swap | awk '{num = ($3 \/ $2) * 100} END {print sprintf(\"%.0f\", ($3 \/ $2) * 100)}'",
+        "interval": 10
     },
     "backlight": {
         // "device": "acpi_video1",

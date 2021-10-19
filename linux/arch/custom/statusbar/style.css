@@ -46,6 +46,7 @@ window#waybar.hidden {
 #network,
 #cpu,
 #memory,
+#custom-swap,
 #backlight,
 #pulseaudio,
 #battery,
@@ -89,6 +90,8 @@ label:focus {
 #cpu { }
 
 #memory { }
+
+#custom-swap { }
 
 #backlight { }
 
