@@ -179,6 +179,32 @@ bar {
 
 
 ########################################
+# floating
+########################################
+
+for_window [window_role="pop-up"] floating enable
+for_window [class="Pcmanfm"] floating enable
+for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resize set 80 ppt 30 ppt, move position 10 ppt 0
+for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0
+for_window [app_id="firefoxdeveloperedition" title="ピクチャーインピクチャー"] floating enable, border none, opacity 0.8, resize set 20 ppt 15 ppt, move position 80 ppt 0
+for_window [app_id="firefoxdeveloperedition" title="^\[player\]"] floating enable, border none, opacity 0.6, resize set 25 ppt 20 ppt, move position 98 ppt -18 ppt
+# this does not work in sway, use workaround
+# for_window [floating] resize set 640 480
+floating_maximum_size 1600 x 900
+
+
+########################################
+# focus
+########################################
+
+focus_on_window_activation focus
+no_focus [class="Steam"]
+no_focus [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"]
+no_focus [app_id="firefoxdeveloperedition" title="ピクチャーインピクチャー"]
+no_focus [app_id="firefoxdeveloperedition" title="^\[player\]"]
+
+
+########################################
 # workspaces
 ########################################
 
@@ -202,33 +228,13 @@ for_window [title="^\[ws3\]"] move to workspace 3
 for_window [title="^\[ws4\]"] move to workspace 4
 for_window [title="^\[ws5\]"] move to workspace 5
 
+for_window [title="^\[player\]"] move to workspace 3
+
 for_window [class="Thunderbird"] move to workspace 1
 for_window [class="Spotify"] move to workspace 3
 for_window [class="Element"] move to workspace 3
 
 for_window [class="Steam"] move to workspace 4
-
-
-########################################
-# floating
-########################################
-
-for_window [window_role="pop-up"] floating enable
-for_window [class="Pcmanfm"] floating enable
-for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resize set 80 ppt 30 ppt, move position 10 ppt 0
-for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0
-# this does not work in sway, use workaround
-# for_window [floating] resize set 640 480
-floating_maximum_size 1600 x 900
-
-
-########################################
-# focus
-########################################
-
-focus_on_window_activation focus
-no_focus [class="Steam"]
-no_focus [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"]
 
 
 ########################################
