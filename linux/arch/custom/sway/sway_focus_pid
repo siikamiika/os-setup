@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+
+import subprocess
+import json
+import sys
+
+def get_tree():
+    p = subprocess.run(['swaymsg', '-t', 'get_tree'], stdout=subprocess.PIPE)
+    return json.loads(p.stdout)
+
+def get_parent_pids(pid):
+    pids = []
+    while True:
+        p = subprocess.run(
+            ['ps', '--pid', str(pid), '--no-headers', '--format', 'ppid'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL
+        )
+        try:
+            pid = int(p.stdout)
+            pids.append(pid)
+        except:
+            break
+    return pids
+
+def get_con_id_for_pid(pid):
+    parent_pids = get_parent_pids(pid)
+    exact_matches = []
+    parent_matches = []
+    stack = [get_tree()]
+    while stack:
+        node = stack.pop()
+        node_pid = node.get('pid')
+        if node_pid == pid:
+            exact_matches.append(node['id'])
+        elif node_pid in parent_pids:
+            parent_matches.append(node['id'])
+        for key in ['nodes', 'floating_nodes']:
+            if nodes := node.get(key):
+                stack += nodes
+    if exact_matches:
+        return exact_matches[-1]
+    if parent_matches:
+        return parent_matches[-1]
+    return None
+
+def focus_con_id(con_id):
+    subprocess.run(['swaymsg', f'[con_id={con_id}]', 'focus'])
+
+def main():
+    pid = int(sys.argv[1])
+    con_id = get_con_id_for_pid(pid)
+    if con_id:
+        focus_con_id(con_id)
+
+if __name__ == '__main__':
+    main()
