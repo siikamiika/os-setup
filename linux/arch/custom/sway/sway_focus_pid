@@ -25,23 +25,20 @@ def get_parent_pids(pid):
 
 def get_con_id_for_pid(pid):
     parent_pids = get_parent_pids(pid)
-    exact_matches = []
     parent_matches = []
     stack = [get_tree()]
     while stack:
         node = stack.pop()
         node_pid = node.get('pid')
         if node_pid == pid:
-            exact_matches.append(node['id'])
-        elif node_pid in parent_pids:
+            return node['id']
+        if node_pid in parent_pids:
             parent_matches.append(node['id'])
         for key in ['nodes', 'floating_nodes']:
             if nodes := node.get(key):
-                stack += nodes
-    if exact_matches:
-        return exact_matches[-1]
+                stack += [*reversed(nodes)]
     if parent_matches:
-        return parent_matches[-1]
+        return parent_matches[0]
     return None
 
 def focus_con_id(con_id):
