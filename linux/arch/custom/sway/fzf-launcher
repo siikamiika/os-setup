@@ -5,6 +5,15 @@ gen_random_string()
     hexdump -n 16 -e '4/4 "%08x" 1 "\n"' /dev/urandom
 }
 
+str_repeat()
+{
+    local str="$1"
+    local lim="$2"
+    for ((i=0;i<lim;i++)); do
+        printf "%s" "$str"
+    done
+}
+
 dir="/run/user/$(id -u)/launcher-comm"
 mkdir -p "$dir"
 
@@ -16,10 +25,14 @@ mkfifo -m 600 "$OUTPUT_FIFO"
 # redirect stdin to $INPUT_FIFO
 cat <&0 > "$INPUT_FIFO" &
 
+cat='cat "$INPUT_FIFO"'
+fzf="fzf --ansi --layout=reverse --bind 'tab:first$(str_repeat '+down' "${START_INDEX:-0}")'"
+out='"$OUTPUT_FIFO"'
+
 alacritty \
     --title=launcher \
     -e bash \
-    -c 'cat "$INPUT_FIFO" | fzf --ansi --layout=reverse > "$OUTPUT_FIFO"' \
+    -c "$cat | $fzf > $out" \
     &
 
 cat "$OUTPUT_FIFO"
