@@ -28,7 +28,12 @@ function incremental_backup()
     done
     sshrun mv "$REMOTE_PATH/backup.tmp" "$REMOTE_PATH/backup.0"
     sshrun cp -al "$REMOTE_PATH/backup.1/." "$REMOTE_PATH/backup.0"
-    rsync -a --delete "$LOCAL_PATH/" "$REMOTE_HOST:$REMOTE_PATH/backup.0"
+    rsync \
+        -a \
+        --delete \
+        --itemize-changes \
+        "$LOCAL_PATH/" \
+        "$REMOTE_HOST:$REMOTE_PATH/backup.0"
 }
 
 incremental_backup "${ROTATE:-10}"
