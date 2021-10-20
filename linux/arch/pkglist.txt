@@ -7,6 +7,7 @@ bind
 binutils
 bluez
 bluez-utils
+cronie
 ctags
 dunst
 element-desktop
@@ -75,6 +76,7 @@ ranger
 rime-cantonese
 ripgrep
 rofi
+rsync
 slurp
 socat
 spotblock-git
