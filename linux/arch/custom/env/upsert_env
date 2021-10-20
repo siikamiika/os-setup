@@ -1,0 +1,12 @@
+#!/bin/bash
+
+VAR_TO_UPSERT="$1"
+VAL_TO_UPSERT="$2"
+
+if grep -q "^$VAR_TO_UPSERT=" /etc/environment; then
+    sudo sed \
+        -e "/^$VAR_TO_UPSERT=.*/c $VAR_TO_UPSERT=$VAL_TO_UPSERT" \
+        -i /etc/environment
+else
+    echo "$VAR_TO_UPSERT=$VAL_TO_UPSERT" | sudo tee -a /etc/environment > /dev/null
+fi
