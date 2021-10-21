@@ -9,31 +9,53 @@
 LOCAL_PATH="$1"
 REMOTE_HOST="$2"
 REMOTE_PATH="$3"
-ROTATE="$4"
+ROTATE="${4:-10}"
 
 function sshrun()
 {
     ssh "$REMOTE_HOST" -- "$@"
 }
 
+function find_start_pos()
+{
+    # in case there are not yet $ROTATE backups or previous run was interrupted
+    for ((i=0; i<=ROTATE; i++)); do
+        if ! sshrun test -e "$REMOTE_PATH/backup.$i"; then
+            echo "$i"
+            return
+        fi
+    done
+    echo $ROTATE
+}
+
 function incremental_backup()
 {
     # idea: http://www.mikerubel.org/computers/rsync_snapshots/#Incremental
     sshrun mkdir -p "$REMOTE_PATH"
-    local max_backups=$1
-    sshrun mv "$REMOTE_PATH/backup.$max_backups" "$REMOTE_PATH/backup.tmp"
-    for ((i=max_backups; i>=1; i--)); do
+    local start="$(find_start_pos)"
+    if ((start == $ROTATE)) && sshrun test -e "$REMOTE_PATH/backup.$ROTATE"; then
+        sshrun rm -rf "$REMOTE_PATH/backup.$ROTATE"
+    fi
+    for ((i=start; i>=1; i--)); do
         local j="$((i-1))"
-        sshrun mv "$REMOTE_PATH/backup.$j" "$REMOTE_PATH/backup.$i"
+        local from="$REMOTE_PATH/backup.$j"
+        local to="$REMOTE_PATH/backup.$i"
+        sshrun mv "$from" "$to"
     done
-    sshrun mv "$REMOTE_PATH/backup.tmp" "$REMOTE_PATH/backup.0"
-    sshrun cp -al "$REMOTE_PATH/backup.1/." "$REMOTE_PATH/backup.0"
+    if sshrun test -e "$REMOTE_PATH/backup.1"; then
+        sshrun cp -al "$REMOTE_PATH/backup.1/." "$REMOTE_PATH/backup.0"
+    fi
+    local excludes=~/.config/rsync/rsync-exclude.txt
     rsync \
         -a \
         --delete \
         --itemize-changes \
+        --exclude=.cache \
         "$LOCAL_PATH/" \
         "$REMOTE_HOST:$REMOTE_PATH/backup.0"
+    if [ ! $? -eq 0 ]; then
+        sshrun rm -rf "$REMOTE_PATH/backup.0"
+    fi
 }
 
-incremental_backup "${ROTATE:-10}"
+incremental_backup
