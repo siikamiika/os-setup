@@ -45,7 +45,6 @@ function incremental_backup()
     if sshrun test -e "$REMOTE_PATH/backup.1"; then
         sshrun cp -al "$REMOTE_PATH/backup.1/." "$REMOTE_PATH/backup.0"
     fi
-    local excludes=~/.config/rsync/rsync-exclude.txt
     rsync \
         -a \
         --delete \
