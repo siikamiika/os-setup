@@ -1,0 +1,15 @@
+- essential library https://github.com/libkeepass/pykeepass
+- reference implementation https://github.com/firecat53/keepmenu
+    - contribute
+- wtype
+    # pipe text
+    printf %s password | wtype - # subprocess.Popen(['wtype', '-'], stdin=subprocess.PIPE)
+    # username + tab + password
+    printf %s username | wtype -
+    wtype -k tab # /usr/include/X11/keysymdef.h without the `XK_` prefix
+    printf %s password | wtype -
+    # username, sleep 200ms, tab, password
+    printf %s password | wtype username -s 200 -k tab -
+- firefox-tab-control integration (store domain of currently focused tab somewhere)
+- match app_id/window_properties.class to password
+    - preferably same location as firefox-tab-control with a common format

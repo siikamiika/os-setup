@@ -10,7 +10,6 @@ bluez-utils
 cronie
 ctags
 dunst
-element-desktop
 expect
 fakeroot
 fcitx5
@@ -67,6 +66,8 @@ pulseaudio-bluetooth
 pyright
 python-evdev
 python-jedi
+python-pip
+python-pykeepass
 python-pylint
 python-pynvim
 python-pyqt5
@@ -87,6 +88,7 @@ sudo
 sway
 swaybg
 swaylock
+tk
 ttf-font-awesome
 ttf-sarasa-gothic
 vapoursynth
@@ -96,7 +98,7 @@ wayvnc
 wf-recorder
 wl-clipboard
 wlroots
-wtype
+wtype-git
 xclip
 xdg-desktop-portal-wlr
 xdotool
