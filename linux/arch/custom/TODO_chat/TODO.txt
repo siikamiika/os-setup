@@ -1,0 +1,10 @@
+- IRC
+    - https://weechat.org/
+    - https://sr.ht/~emersion/soju/
+    - https://github.com/glowing-bear/glowing-bear
+- Matrix
+    - https://github.com/poljar/weechat-matrix
+    - https://github.com/8go/matrix-commander
+- XMPP
+    - https://github.com/bitlbee/bitlbee
+    - https://lab.louiz.org/poezio/slixmpp
