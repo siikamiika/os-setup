@@ -49,7 +49,7 @@ function incremental_backup()
         -a \
         --delete \
         --itemize-changes \
-        --exclude=.cache \
+        --exclude=/.cache \
         "$LOCAL_PATH/" \
         "$REMOTE_HOST:$REMOTE_PATH/backup.0"
     if [ ! $? -eq 0 ]; then
