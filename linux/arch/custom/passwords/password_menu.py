@@ -4,10 +4,11 @@ import getpass
 import subprocess
 import readline
 import os
+import time
 
 
 class PasswordMenu:
-    _ACTION_SHOW_ENTRY = 1
+    _ACTION_INPUT_ENTRY = 1
     _ACTION_ADD_ENTRY = 2
     _ACTION_DELETE_ENTRY = 3
 
@@ -37,9 +38,9 @@ class PasswordMenu:
 
     def _get_prompt_actions(self, db):
         return {
-            self._ACTION_SHOW_ENTRY: (
-                'Show entry',
-                lambda: self._action_show_entry(db),
+            self._ACTION_INPUT_ENTRY: (
+                'Input entry',
+                lambda: self._action_input_entry(db),
             ),
             self._ACTION_ADD_ENTRY: (
                 'Add entry',
@@ -52,14 +53,19 @@ class PasswordMenu:
         }
 
     # actions
-    def _action_show_entry(self, db):
+    def _action_input_entry(self, db):
         try:
             entry = self._pick_entry(db)
-            print(entry)
-            input()
+            entry_actions = [
+                'username',
+                'password',
+                'url',
+            ]
+            while (entry_action := self._fzf(entry_actions)):
+                self._autotype(getattr(entry, entry_action))
             return True
         except Exception as e:
-            print(f'Failed to show entries: {e}')
+            print(f'Failed to input entry: {e}')
             return False
 
     def _action_add_entry(self, db):
@@ -132,9 +138,17 @@ class PasswordMenu:
         fzf.stdin.close()
         return fzf.stdout.read().rstrip(b'\r\n').decode('utf-8')
 
+    def _autotype(self, text):
+        wtype = subprocess.Popen(['wtype', '-'], stdin=subprocess.PIPE)
+        if not wtype.stdin:
+            raise Exception('Could not open wtype stdin')
+        time.sleep(2)
+        wtype.stdin.write(text.encode('utf-8'))
+        wtype.stdin.close()
+
 
 def main():
-    db_path = './db.kdbx'
+    db_path = os.path.expanduser('~/.config/password_menu/db.kdbx')
     pm = PasswordMenu(db_path)
     pm.session()
 

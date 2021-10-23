@@ -1,0 +1,6 @@
+- reference implementation https://github.com/firecat53/keepmenu
+    - contribute
+- firefox-tab-control integration (store domain of currently focused tab somewhere)
+- match app_id/window_properties.class to password
+    - preferably same location as firefox-tab-control with a common format
+- focus automatically
