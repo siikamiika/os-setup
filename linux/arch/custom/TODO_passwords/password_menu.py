@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import getpass
-import pykeepass
+import subprocess
+import readline
+import os
 
 
 class PasswordMenu:
@@ -14,23 +16,20 @@ class PasswordMenu:
 
     def session(self):
         print('Decrypting DB')
-        while True:
-            try:
-                db = self._get_decrypted_db()
-                break
-            except pykeepass.exceptions.CredentialsError:
-                print('Invalid password')
+        while (db := self._get_decrypted_db()) is None:
+            pass
         while self._session_action_prompt(db):
             pass
 
     # prompt
     def _session_action_prompt(self, db):
-        print('What would you like to do?')
         prompt_actions = self._get_prompt_actions(db)
+        prompt = []
         for action, (desc, _) in prompt_actions.items():
-            print(f'{action}. {desc}')
+            prompt.append(f'{action}. {desc}')
         try:
-            action = int(input().strip())
+            choice = self._fzf(prompt)
+            action = int(choice.split('.', 1)[0])
         except ValueError:
             return False
         prompt_actions[action][1]()
@@ -55,8 +54,9 @@ class PasswordMenu:
     # actions
     def _action_show_entry(self, db):
         try:
-            entries = self._find_entries(db)
-            print(entries)
+            entry = self._pick_entry(db)
+            print(entry)
+            input()
             return True
         except Exception as e:
             print(f'Failed to show entries: {e}')
@@ -66,9 +66,9 @@ class PasswordMenu:
         try:
             db.add_entry(
                 destination_group=db.root_group,
-                title=input('Title: '),
-                username=input('Username: '),
-                url=input('URL: '),
+                title=self._input('Title: ', ''),
+                username=self._input('Username: ', os.environ['USER']),
+                url=self._input('URL: ', 'https://'),
                 password=getpass.getpass(),
             )
             db.save()
@@ -77,19 +77,60 @@ class PasswordMenu:
             print(f'Failed to add entry: {e}')
 
     def _action_delete_entry(self, db):
-        raise Exception('TODO unimplemented')
+        entry = self._pick_entry(db)
+        if entry:
+            db.delete_entry(entry)
+            db.save()
 
-    def _find_entries(self, db):
-        return db.find_entries(
-            title=input('Title pattern: '),
-            url=input('URL pattern: '),
-            regex=True,
-        )
+    def _pick_entry(self, db):
+        entries = db.entries
+        padding = '\t' * 30
+        entry_prompts = [
+            f'{e.url} {e.username} {e.title}{padding}{e.uuid}'
+            for e in entries
+        ]
+        try:
+            choice = self._fzf(entry_prompts)
+            return entries[entry_prompts.index(choice)]
+        except ValueError:
+            return None
+        # TODO
+        # db.find_entries(title='.*', url='.*', regex=True)
 
     # db
     def _get_decrypted_db(self):
         password = getpass.getpass()
-        return pykeepass.PyKeePass(self._db_path, password=password)
+        import pykeepass
+        try:
+            return pykeepass.PyKeePass(self._db_path, password=password)
+        except pykeepass.exceptions.CredentialsError:
+            print('Invalid password')
+            return None
+
+    # input handling
+    def _input(self, prompt, text):
+        def hook():
+            readline.insert_text(text)
+            readline.redisplay()
+        readline.set_pre_input_hook(hook)
+        result = input(prompt)
+        readline.set_pre_input_hook()
+        return result
+
+    def _fzf(self, lines):
+        fzf = subprocess.Popen(
+            ['fzf', '--layout=reverse'],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE
+        )
+        if not fzf.stdin:
+            raise Exception('Could not open fzf stdin')
+        if not fzf.stdout:
+            raise Exception('Could not open fzf stdout')
+        fzf_input = ''.join([l + '\n' for l in lines]).encode('utf-8')
+        fzf.stdin.write(fzf_input)
+        fzf.stdin.close()
+        return fzf.stdout.read().rstrip(b'\r\n').decode('utf-8')
 
 
 def main():
