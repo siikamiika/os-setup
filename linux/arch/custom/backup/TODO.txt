@@ -1,2 +1,5 @@
 - restore script
 - mail
+- anacron
+- weekly
+- monthly
