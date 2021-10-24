@@ -14,8 +14,26 @@ install_yay ()
 
 setup_software ()
 {
-    echo TODO
+    echo "TODO setup_software"
 }
 
-install_yay
-yay --editmenu -S --needed - < linux/arch/pkglist.txt
+pre_install()
+{
+    echo
+}
+
+post_install()
+{
+    install_yay
+    yay --editmenu -S --needed - < linux/arch/pkglist.txt
+    setup_software
+}
+
+read -p "preinstall or post-install? [pre/post] "
+if [[ $REPLY =~ ^pre$ ]]; then
+    pre_install
+elif [[ $REPLY =~ ^post$ ]]; then
+    post_install
+else
+    echo "Unrecognized option: $REPLY"
+fi
