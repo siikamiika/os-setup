@@ -30,10 +30,14 @@ post_install()
 }
 
 read -p "preinstall or post-install? [pre/post] "
-if [[ $REPLY =~ ^pre$ ]]; then
-    pre_install
-elif [[ $REPLY =~ ^post$ ]]; then
-    post_install
-else
-    echo "Unrecognized option: $REPLY"
-fi
+case $REPLY in
+    pre)
+        pre_install
+        ;;
+    post)
+        post_install
+        ;;
+    *)
+        echo "Unrecognized option: $REPLY"
+        ;;
+esac
