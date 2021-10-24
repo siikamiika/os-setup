@@ -1,0 +1,2 @@
+- https://wiki.archlinux.org/title/WireGuard
+- https://github.com/k4yt3x/wg-meshconf
