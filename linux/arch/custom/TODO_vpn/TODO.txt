@@ -1,2 +1,4 @@
 - https://wiki.archlinux.org/title/WireGuard
 - https://github.com/k4yt3x/wg-meshconf
+- https://gitlab.com/NickCao/RAIT
+- https://www.jordanwhited.com/posts/wireguard-endpoint-discovery-nat-traversal/
