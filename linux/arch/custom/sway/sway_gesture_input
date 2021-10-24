@@ -360,9 +360,13 @@ class SwayGestureInput:
                     self._virtual_input.key(KEY_R, [KEY_LEFTCTRL])
         elif event['fingers'] == 4:
             if event['direction'] == 'left':
-                self._sway.change_workspace('left')
+                self._sway.change_focus('left')
             elif event['direction'] == 'right':
-                self._sway.change_workspace('right')
+                self._sway.change_focus('right')
+            elif event['direction'] == 'up':
+                self._sway.change_focus('up')
+            elif event['direction'] == 'down':
+                self._sway.change_focus('down')
 
     def _handle_status(self, event):
         # ignore regular scroll
