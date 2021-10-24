@@ -3,10 +3,7 @@
 echo "Configuring backup"
 sudo cp ./rsync-inc-backup.sh /usr/local/bin/
 
-CRONTAB="/var/spool/cron/$USER"
-sudo cp ./crontab "$CRONTAB"
-sudo chown "$USER:$USER" "$CRONTAB"
-sudo chmod 600 "$CRONTAB"
+cat ./crontab | crontab -
 
 echo "Remember to set the BACKUP_HOST and BACKUP_HOST_DIR variables"
 

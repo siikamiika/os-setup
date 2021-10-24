@@ -10,5 +10,5 @@
 #   * Wildcard, specifies every possible time interval
 #   , List multiple values separated by a comma.
 #   - Specify a range between two numbers, separated by a hyphen
-#   / Specify a periodicity/frequency using a slash 
+#   / Specify a periodicity/frequency using a slash
 0 */3 * * * /usr/local/bin/rsync-inc-backup.sh ~/ "$BACKUP_HOST" "$BACKUP_HOST_DIR"
