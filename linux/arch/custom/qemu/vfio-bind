@@ -1,0 +1,15 @@
+#!/bin/bash
+
+modprobe vfio-pci
+
+for dev in "0000:26:00.0" "0000:26:00.1"; do
+    vendor=$(cat /sys/bus/pci/devices/$dev/vendor)
+    device=$(cat /sys/bus/pci/devices/$dev/device)
+    if [ -e /sys/bus/pci/devices/$dev/driver ]; then
+        echo $dev > /sys/bus/pci/devices/$dev/driver/unbind
+        while [ -e /sys/bus/pci/devices/${dev}/driver ]; do
+            sleep 0.1
+        done
+    fi
+    echo $vendor $device > /sys/bus/pci/drivers/vfio-pci/new_id
+done
