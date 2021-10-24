@@ -121,7 +121,7 @@ bindsym button7 nop
 bindsym $mod+r exec 'compgen -c | sort -u | fzf-launcher | xargs -r swaymsg -t command exec'
 bindsym $mod+o exec 'get_focus_prompt | fzf-launcher | grep -oP "\\t\\K\\d+" | xargs -r -I {} swaymsg "[con_id={}]" focus'
 bindsym $mod+t exec socat - "UNIX-CONNECT:/run/user/$(id -u)/firefox_tab_control.sock"
-bindsym $mod+p exec alacritty --title=launcher -e bash -c password_menu.py
+bindsym $mod+p exec alacritty --title=launcher -e fish -c password_menu.py
 
 # new instances of frequently used software
 bindsym $mod+Return exec alacritty

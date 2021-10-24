@@ -56,6 +56,8 @@ class PasswordMenu:
     def _action_input_entry(self, db):
         try:
             entry = self._pick_entry(db)
+            if not entry:
+                return False
             entry_actions = [
                 'username',
                 'password',
