@@ -19,16 +19,30 @@ setup_software ()
 
 install_partitions()
 {
-    local disk="$(lsblk -p | fzf | awk '{print $1}')"
-    read -p "Installing on $disk. OK? [y/N]" -n 1 -r && echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
+    # choose disk
+    local disk=$(while true; do
+        d="$(lsblk -p | fzf --reverse | awk '{print $1}')"
+        read -p "Installing on $d. All data will be deleted. OK? [y/N]"
+        [[ $REPLY =~ ^[Yy]$ ]] && echo $d && break
+    done)
+    clear
+
+    # fill the disk with random data
+    read -p "Write random data to $disk? [y/N]"
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        cryptsetup open --type plain -d /dev/urandom "$disk" to_be_wiped
+        dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress
+        cryptsetup close to_be_wiped
     fi
+
+    # swap size
     grep MemTotal /proc/meminfo | awk '$3=="kB"{$2=$2/1024/1024;$3="GB"} 1'
     local swap_size=$(while true; do
         read -p "Swap size (G is implied): "
         [ ! -z "${REPLY##*[!0-9]*}" ] && echo $REPLY && break
     done)
+
+    # partitioning
     # TODO gdisk
     # Linux LUKS 	Any 	8309 	CA7D7CCB-63ED-4C53-861C-1742536059CC
     (
@@ -70,8 +84,14 @@ install_partitions()
         ##################################
         echo w                   # write table to disk and exit
     ) | fdisk "$disk"
-    read -p "Choose LUKS partition" -n 1 && echo
-    local luks_partition="$(lsblk -po KNAME,SIZE -n "$disk" | grep -v "^$disk\s" | fzf | awk '{print $1}')"
+
+    # encryption
+    local luks_partition=$(while true; do
+        read -p "Choose LUKS partition"
+        local res="$(lsblk -po KNAME,SIZE -n "$disk" | grep -v "^$disk\s" | fzf --reverse | awk '{print $1}')"
+        [ ! -z "$res" ] && echo $res && break
+    done)
+    clear
     echo $luks_partition
 }
 
@@ -81,8 +101,10 @@ pre_install()
         echo "Only UEFI is supported"
         exit 1
     fi
-    pacman -Sy
-    pacman -S fzf
+    if ! pacman -Qi fzf > /dev/null; then
+        pacman -Sy
+        pacman -S fzf
+    fi
     timedatectl set-ntp true
     install_partitions
 }
@@ -93,6 +115,8 @@ post_install()
     yay --editmenu -S --needed - < linux/arch/pkglist.txt
     setup_software
 }
+
+trap 'exit 0' SIGINT
 
 read -p "preinstall or post-install? [pre/post] "
 case $REPLY in
