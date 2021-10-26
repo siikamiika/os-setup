@@ -17,6 +17,14 @@ setup_software ()
     echo "TODO setup_software"
 }
 
+ensure_fzf()
+{
+    if ! pacman -Qi fzf > /dev/null 2>&1; then
+        pacman -Sy
+        pacman -S fzf
+    fi
+}
+
 fzf_prompt()
 {
     tac | fzf --prompt="$1> "
@@ -53,15 +61,11 @@ install_partitions()
     echo "Partitioning $disk: adding esp and crypto-luks"
     parted --script "$disk" \
         mklabel gpt \
-        mkpart primary 0% 261MiB \
-        name 1 esp \
-        mkpart primary 261MiB 100% \
-        name 2 crypto-luks
-    # synchronize cached writes to make the partitions visible
-    sync
-
-    # prepare mount points
-    mkdir -p /mnt/boot
+        mkpart esp fat32 1MiB 261MiB \
+        set 1 esp on \
+        mkpart crypto-luks 261MiB 100%
+    # TODO while
+    sleep 5
 
     # Create EFI system partition
     echo "Creating EFI system partition"
@@ -97,9 +101,106 @@ install_partitions()
 
     # mount partitions
     echo "Mounting partitions to /mnt"
-    mount "$efi_system_partition" /mnt/boot
     mount "/dev/$VOLUME_GROUP/root" /mnt
     swapon "/dev/$VOLUME_GROUP/swap"
+    mkdir -p /mnt/boot
+    mount "$efi_system_partition" /mnt/boot
+
+    # save variables for later
+    mkdir -p /mnt/root/tmp_install_variables
+    echo "$luks_partition" > /mnt/root/tmp_install_variables/luks_partition
+    echo "$VOLUME_GROUP" > /mnt/root/tmp_install_variables/VOLUME_GROUP
+}
+
+install_base_system()
+{
+    pacstrap /mnt base linux linux-firmware
+    genfstab -U /mnt >> /mnt/etc/fstab
+}
+
+configure_location()
+{
+    ln -sf "$(find /usr/share/zoneinfo | fzf)" /etc/localtime
+    hwclock --systohc
+    # fuck yeah
+    sed -e '/^#\?en_US.UTF-8 UTF-8$/c en_US.UTF-8 UTF-8' -i /etc/locale.gen
+    locale-gen
+    echo "LANG=en_US.UTF-8" > /etc/locale.conf
+}
+
+configure_hostname()
+{
+    while true; do
+        read -p "Hostname: "
+        [ ! -z "$REPLY" ] && echo "$REPLY" > /etc/hostname && break
+    done
+}
+
+configure_encryption()
+{
+    pacman -S lvm2
+    sed -e '/^HOOKS=/c HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck)' -i /etc/mkinitcpio.conf
+    mkinitcpio -P
+}
+
+configure_users()
+{
+    passwd
+    # TODO regular user
+}
+
+configure_bootloader()
+{
+    # systemd-boot
+    bootctl install
+    mkdir -p /etc/pacman.d/hooks
+    echo "\
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = systemd
+
+[Action]
+Description = Updating systemd-boot
+When = PostTransaction
+Exec = /usr/bin/bootctl update" \
+    > /etc/pacman.d/hooks/100-systemd-boot.hook
+
+    echo "\
+default  arch.conf
+timeout  4
+console-mode max
+editor   no" \
+    > /boot/loader/loader.conf
+
+    local cpu_vendor="$(grep vendor_id /proc/cpuinfo | head -1 | awk '{print $3}')"
+    local initrd_ucode=""
+    if [ "$cpu_vendor" = "AuthenticAMD" ]; then
+        pacman -S amd-ucode
+        initrd_ucode='initrd	/amd-ucode.img'
+    elif [ "$cpu_vendor" = "GenuineIntel" ]; then
+        pacman -S intel-ucode
+        initrd_ucode='initrd	/intel-ucode.img'
+    fi
+    local luks_partition="$(< /root/tmp_install_variables/luks_partition)"
+    local VOLUME_GROUP="$(< /root/tmp_install_variables/VOLUME_GROUP)"
+    local uuid="$(basename "$(find -L /dev/disk/by-uuid/ -xtype l -samefile "$luks_partition")")"
+    echo "\
+title	Arch Linux
+linux	/vmlinuz-linux
+$initrd_ucode
+initrd	/initramfs-linux.img
+options	cryptdevice=UUID=$uuid:cryptlvm	root=/dev/$VOLUME_GROUP/root	resume=/dev/$VOLUME_GROUP/swap"\
+    > /boot/loader/entries/arch.conf
+}
+
+configure_system()
+{
+    configure_location
+    configure_hostname
+    configure_encryption
+    configure_users
+    configure_bootloader
 }
 
 pre_install()
@@ -108,16 +209,18 @@ pre_install()
         echo "Only UEFI is supported"
         exit 1
     fi
-    if ! pacman -Qi fzf > /dev/null 2>&1; then
-        pacman -Sy
-        pacman -S fzf
-    fi
+    ensure_fzf
     timedatectl set-ntp true
     install_partitions
+    install_base_system
+    echo "Congratulations! You can now arch-chroot into /mnt and continue with post-installation"
 }
 
 post_install()
 {
+    ensure_fzf
+    configure_system
+    exit # TODO
     install_yay
     yay --editmenu -S --needed - < linux/arch/pkglist.txt
     setup_software
