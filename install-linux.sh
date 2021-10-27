@@ -5,6 +5,9 @@
 install_yay ()
 {
     sudo pacman -S fakeroot
+    sudo pacman -S binutils
+    sudo pacman -S make
+    sudo pacman -S gcc
     local dir=/tmp/yaybuild
     mkdir -p "$dir"
     curl -o "$dir/PKGBUILD" 'https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=yay'
@@ -128,7 +131,7 @@ configure_location()
     ln -sf "$(find /usr/share/zoneinfo | fzf)" /etc/localtime
     hwclock --systohc
     # fuck yeah
-    sed -e '/^#\?en_US.UTF-8 UTF-8$/c en_US.UTF-8 UTF-8' -i /etc/locale.gen
+    sed -e '/^#\?en_US.UTF-8 UTF-8/c en_US.UTF-8 UTF-8' -i /etc/locale.gen
     locale-gen
     echo "LANG=en_US.UTF-8" > /etc/locale.conf
 }
