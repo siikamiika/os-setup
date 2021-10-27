@@ -17,17 +17,14 @@ setup_software ()
     echo "TODO setup_software"
 }
 
-ensure_fzf()
-{
-    if ! pacman -Qi fzf > /dev/null 2>&1; then
-        pacman -Sy
-        pacman -S fzf
-    fi
-}
-
 fzf_prompt()
 {
     tac | fzf --prompt="$1> "
+}
+
+pacinstall()
+{
+    pacman -S --noconfirm --needed "$@"
 }
 
 get_partition_by_label()
@@ -118,6 +115,14 @@ install_base_system()
     genfstab -U /mnt >> /mnt/etc/fstab
 }
 
+configure_shell()
+{
+    pacinstall fish
+    pacinstall neovim
+    pacinstall ssh
+    echo 'EDITOR=/usr/bin/nvim' >> /etc/environment
+}
+
 configure_location()
 {
     ln -sf "$(find /usr/share/zoneinfo | fzf)" /etc/localtime
@@ -128,25 +133,36 @@ configure_location()
     echo "LANG=en_US.UTF-8" > /etc/locale.conf
 }
 
-configure_hostname()
+configure_network()
 {
     while true; do
         read -p "Hostname: "
         [ ! -z "$REPLY" ] && echo "$REPLY" > /etc/hostname && break
     done
+    pacinstall networkmanager
+    systemctl enable NetworkManager.service
 }
 
 configure_encryption()
 {
-    pacman -S lvm2
+    pacinstall lvm2
     sed -e '/^HOOKS=/c HOOKS=(base udev autodetect keyboard keymap consolefont modconf block encrypt lvm2 filesystems fsck)' -i /etc/mkinitcpio.conf
     mkinitcpio -P
 }
 
 configure_users()
 {
+    echo "Configuring root user"
     passwd
-    # TODO regular user
+    echo "Configuring regular user"
+    regular_user=$(while true; do
+        read -p "Enter regular user name: "
+        [ ! -z "$REPLY" ] && echo "$REPLY" && break
+    done)
+    useradd -m -G wheel -s /bin/fish "$regular_user"
+    passwd "$regular_user"
+    pacinstall sudo
+    EDITOR=/usr/bin/nvim visudo
 }
 
 configure_bootloader()
@@ -176,10 +192,10 @@ editor   no" \
     local cpu_vendor="$(grep vendor_id /proc/cpuinfo | head -1 | awk '{print $3}')"
     local initrd_ucode=""
     if [ "$cpu_vendor" = "AuthenticAMD" ]; then
-        pacman -S amd-ucode
+        pacinstall amd-ucode
         initrd_ucode='initrd	/amd-ucode.img'
     elif [ "$cpu_vendor" = "GenuineIntel" ]; then
-        pacman -S intel-ucode
+        pacinstall intel-ucode
         initrd_ucode='initrd	/intel-ucode.img'
     fi
     local luks_partition="$(< /root/tmp_install_variables/luks_partition)"
@@ -196,8 +212,9 @@ options	cryptdevice=UUID=$uuid:cryptlvm	root=/dev/$VOLUME_GROUP/root	resume=/dev
 
 configure_system()
 {
+    configure_shell
     configure_location
-    configure_hostname
+    configure_network
     configure_encryption
     configure_users
     configure_bootloader
@@ -209,7 +226,8 @@ pre_install()
         echo "Only UEFI is supported"
         exit 1
     fi
-    ensure_fzf
+    pacman -Sy
+    pacinstall fzf
     timedatectl set-ntp true
     install_partitions
     install_base_system
@@ -218,7 +236,7 @@ pre_install()
 
 post_install()
 {
-    ensure_fzf
+    pacinstall fzf
     configure_system
     exit # TODO
     install_yay
