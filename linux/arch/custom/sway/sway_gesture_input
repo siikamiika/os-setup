@@ -288,7 +288,7 @@ class SwayGestureInput:
                      BTN_SIDE, BTN_EXTRA, BTN_FORWARD,
                      KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTMETA, KEY_LEFTALT,
                      KEY_PAGEUP, KEY_PAGEDOWN, KEY_TAB,
-                     KEY_W, KEY_T, KEY_R, KEY_F, KEY_Q,
+                     KEY_W, KEY_T, KEY_R, KEY_F, KEY_Q, KEY_N,
                      KEY_BACK, KEY_FORWARD, KEY_LEFT, KEY_RIGHT],
             EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
         }, name='sgi-virt-input')
@@ -359,14 +359,24 @@ class SwayGestureInput:
                 elif event['direction'] == 'down':
                     self._virtual_input.key(KEY_R, [KEY_LEFTCTRL])
         elif event['fingers'] == 4:
-            if event['direction'] == 'left':
-                self._sway.change_focus('left')
-            elif event['direction'] == 'right':
-                self._sway.change_focus('right')
-            elif event['direction'] == 'up':
-                self._sway.change_focus('up')
-            elif event['direction'] == 'down':
-                self._sway.change_focus('down')
+            if event['single']:
+                print(self._sway.focused_app, event)
+                if self._sway.focused_app == 'firefoxdeveloperedition':
+                    # reopen window
+                    if event['direction'] == 'up':
+                        self._virtual_input.key(KEY_N, [KEY_LEFTCTRL, KEY_LEFTSHIFT])
+                    # close window
+                    elif event['direction'] == 'down':
+                        self._virtual_input.key(KEY_W, [KEY_LEFTCTRL, KEY_LEFTSHIFT])
+            else:
+                if event['direction'] == 'left':
+                    self._sway.change_focus('left')
+                elif event['direction'] == 'right':
+                    self._sway.change_focus('right')
+                elif event['direction'] == 'up':
+                    self._sway.change_focus('up')
+                elif event['direction'] == 'down':
+                    self._sway.change_focus('down')
 
     def _handle_status(self, event):
         # ignore regular scroll
