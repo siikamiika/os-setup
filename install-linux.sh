@@ -143,6 +143,11 @@ configure_network()
         [ ! -z "$REPLY" ] && echo "$REPLY" > /etc/hostname && break
     done
     pacinstall networkmanager
+    echo "\
+[connectivity]
+uri=http://ping.archlinux.org/nm-check.txt
+interval=0"\
+    > /etc/NetworkManager/conf.d/20-connectivity.conf
     systemctl enable NetworkManager.service
 }
 
