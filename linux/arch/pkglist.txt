@@ -10,6 +10,7 @@ bluez-utils
 cronie
 ctags
 dunst
+edk2-ovmf
 expect
 fakeroot
 fcitx5
@@ -37,6 +38,7 @@ light
 linux
 linux-firmware
 linux-headers
+lvm2
 lxqt-policykit
 make
 man-db
@@ -70,6 +72,7 @@ python-pylint
 python-pynvim
 python-pyqt5
 python2
+qemu
 qt5-wayland
 ranger
 reflector
@@ -77,6 +80,7 @@ rime-cantonese
 ripgrep
 rofi
 rsync
+scdoc
 slurp
 socat
 spotblock-git
