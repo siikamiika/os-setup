@@ -1,3 +1,0 @@
-- gestures
-    - indicator
-        - https://github.com/francma/wob

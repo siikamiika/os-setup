@@ -97,6 +97,7 @@ wayvnc
 wf-recorder
 wl-clipboard
 wlroots
+wob
 wtype-git
 xclip
 xdg-desktop-portal-wlr

@@ -6,7 +6,7 @@
     // Choose the order of the modules
     "modules-left": ["sway/workspaces"],
     // "modules-center": ["sway/window"],
-    "modules-right": ["custom/gestures", "network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "clock", "tray"],
+    "modules-right": ["network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "clock", "tray"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": false,
@@ -20,12 +20,6 @@
         //     "focused": "",
         //     "default": ""
         // }
-    },
-    "custom/gestures": {
-        "format": "{}",
-        "interval": "once",
-        "exec": "cat /tmp/sgi_display",
-        "signal": 9
     },
     "network": {
         // "interface": "wlp2*", // (Optional) To force the use of this interface

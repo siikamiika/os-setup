@@ -42,7 +42,6 @@ window#waybar.hidden {
     background-color: #900000;
 }
 
-#custom-gestures,
 #network,
 #cpu,
 #memory,
@@ -71,10 +70,6 @@ window#waybar.hidden {
 /* If workspaces is the rightmost module, omit right margin */
 .modules-right > widget:last-child > #workspaces {
     margin-right: 0;
-}
-
-#custom-gestures {
-    background-color: #f53c3c;
 }
 
 #network { }

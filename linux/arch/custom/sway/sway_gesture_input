@@ -156,13 +156,6 @@ class GestureEventSource:
                 'fingers': self._state['fingers'],
                 'pos': self._state['pos_y'] / self._state['threshold'],
             }
-        else:
-            yield {
-                'type': 'status',
-                'axis': None,
-                'fingers': None,
-                'pos': 0.0,
-            }
 
     def _consume(self, max_events=None):
         other_axis, consumed_axis = sorted(['pos_x', 'pos_y'], key=lambda a: abs(self._state[a]))
@@ -273,10 +266,20 @@ class VirtualInput:
         self._uinput.syn()
 
 
-class SwayGestureInput:
+class Wob:
+    def __init__(self):
+        self._process = subprocess.Popen(
+            ['wob', '-a', 'bottom', '-t', '500'],
+            stdin=subprocess.PIPE
+        )
 
-    _THROTTLE_DELAY = 0.07
-    _PROGRESS_BAR_LENGTH = 30
+    def write(self, pos):
+        if self._process.stdin:
+            self._process.stdin.write((str(pos) + '\n').encode('utf-8'))
+            self._process.stdin.flush()
+
+
+class SwayGestureInput:
 
     def __init__(self):
         # single instance hack
@@ -294,8 +297,7 @@ class SwayGestureInput:
         }, name='sgi-virt-input')
         self._sway = Sway()
         self._ges = GestureEventSource()
-
-        self._throttle_timer = time.time()
+        self._wob = Wob()
 
     def start(self):
         for event in self._ges.listen():
@@ -386,30 +388,8 @@ class SwayGestureInput:
         # ignore regular scroll
         if event['fingers'] == 2 and event['axis'] == 'y':
             return
-        l = SwayGestureInput._PROGRESS_BAR_LENGTH
-        progress = int(l * abs(event['pos']))
-        if event['pos'] < 0.0:
-            progress_bar = ' ' * (l - progress) + '█' * progress + ' ' * l
-        else:
-            progress_bar = ' ' * l + '█' * progress + ' ' * (l - progress)
-        if event['axis'] == 'x':
-            self._throttle(lambda: self._render_status(progress_bar + f' {event["fingers"]}'))
-        elif event['axis'] == 'y':
-            self._throttle(lambda: self._render_status(progress_bar + f' {event["fingers"]}'))
-        else:
-            self._render_status('')
-
-    def _render_status(self, content):
-        with open('/tmp/sgi_display', 'w') as f:
-            f.write(content)
-        subprocess.run(['pkill', '-RTMIN+9', 'waybar'])
-
-    def _throttle(self, fn):
-        now = time.time()
-        if now - self._throttle_timer < SwayGestureInput._THROTTLE_DELAY:
-            return
-        self._throttle_timer = now
-        fn()
+        pos = int(max(min(((event['pos'] + 1) / 2) * 100, 100), 0))
+        self._wob.write(pos)
 
 
 def main():
