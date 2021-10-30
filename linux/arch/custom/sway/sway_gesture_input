@@ -360,7 +360,6 @@ class SwayGestureInput:
                     self._virtual_input.key(KEY_R, [KEY_LEFTCTRL])
         elif event['fingers'] == 4:
             if event['single']:
-                print(self._sway.focused_app, event)
                 if self._sway.focused_app == 'firefoxdeveloperedition':
                     # reopen window
                     if event['direction'] == 'up':
