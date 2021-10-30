@@ -1,0 +1,1 @@
+- disable workspace wrap https://github.com/i3/i3/issues/3900
