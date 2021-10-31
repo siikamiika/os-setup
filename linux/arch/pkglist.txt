@@ -34,7 +34,6 @@ jq
 kanshi
 libnotify
 libpipewire02
-light
 linux
 linux-firmware
 linux-headers

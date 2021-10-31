@@ -155,8 +155,8 @@ bindsym XF86AudioRaiseVolume exec "amixer set Master 2%+;    pkill -RTMIN+1 i3bl
 bindsym XF86AudioMute        exec "amixer set Master toggle; pkill -RTMIN+1 i3blocks"
 
 # backlight
-bindsym XF86KbdBrightnessDown exec "light -U 5"
-bindsym XF86KbdBrightnessUp exec "light -A 5"
+bindsym XF86KbdBrightnessDown exec echo -5 > /tmp/backlight.fifo
+bindsym XF86KbdBrightnessUp exec echo +5 > /tmp/backlight.fifo
 
 # dunst
 bindsym Control+space exec dunstctl close
@@ -320,3 +320,5 @@ exec --no-startup-id "systemctl --user import-environment DISPLAY WAYLAND_DISPLA
 
 # exec --no-startup-id fcitx5 -d
 exec --no-startup-id sway_gesture_input
+
+exec --no-startup-id blc_fifo

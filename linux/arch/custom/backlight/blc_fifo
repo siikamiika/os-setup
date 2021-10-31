@@ -1,0 +1,6 @@
+#!/bin/sh
+
+killall backlight_changer
+rm /tmp/backlight.fifo
+mkfifo -m 600 /tmp/backlight.fifo
+tail -f /tmp/backlight.fifo | backlight_changer

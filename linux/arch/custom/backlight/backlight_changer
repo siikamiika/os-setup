@@ -1,0 +1,79 @@
+#!/usr/bin/python3
+
+# idea: https://github.com/RPigott/blight
+# adapted to also print the new value as a percentage
+# and run in background
+
+import sys
+import gi
+gi.require_version('GUdev', '1.0')
+from gi.repository import GUdev, GLib, Gio
+
+
+class BacklightDevice:
+    def __init__(self, dev):
+        self._dev = dev
+        self._min_brightness = 1
+        self._max_brightness = dev.get_sysfs_attr_as_int('max_brightness')
+        self._cur_brightness = self._dev.get_sysfs_attr_as_int('brightness')
+        self._subsystem = dev.get_subsystem()
+        self._name = dev.get_name()
+        self._bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+
+    def set_brightness(self, delta):
+        step = (self._max_brightness - self._min_brightness) / 100
+        new_brightness = max(min(
+            self._cur_brightness + round(delta * step),
+            self._max_brightness
+        ), self._min_brightness)
+
+        self._logind_set_brightness(new_brightness)
+        self._cur_brightness = new_brightness
+        return round((
+            (self._cur_brightness - self._min_brightness) /
+            (self._max_brightness - self._min_brightness)
+        ) * 100)
+
+    def _logind_set_brightness(self, brightness):
+        method = [
+            'org.freedesktop.login1',
+            '/org/freedesktop/login1/session/self',
+            'org.freedesktop.login1.Session',
+            'SetBrightness',
+        ]
+        param = GLib.Variant(
+            '(ssu)',
+            [self._subsystem, self._name, brightness]
+        )
+
+        self._bus.call_sync(*method, param, None, Gio.DBusCallFlags.NONE, -1, None)
+
+
+class BacklightChanger:
+    def __init__(self):
+        self._dev = self._get_backlight_device()
+
+    def _get_backlight_device(self):
+        gclient = GUdev.Client()
+        for dev in gclient.query_by_subsystem('backlight'):
+            devtype = dev.get_sysfs_attr('type')
+            if devtype == 'raw':
+                parent = dev.get_parent()
+                if parent.get_sysfs_attr('enabled') == 'enabled':
+                    return BacklightDevice(dev)
+            else:
+                return BacklightDevice(dev)
+        raise Exception('Backlight device not found')
+
+    def set_brightness(self, delta):
+        return self._dev.set_brightness(delta)
+
+def main():
+    backlight_changer = BacklightChanger()
+    for line in sys.stdin.buffer:
+        delta = int(line)
+        new_brightness = backlight_changer.set_brightness(delta)
+        print(new_brightness)
+
+if __name__ == '__main__':
+    main()

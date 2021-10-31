@@ -2,4 +2,5 @@
 
 echo "Configuring backlight"
 
-sudo usermod -a -G video "$USER"
+sudo cp ./backlight_changer /usr/local/bin/
+sudo cp ./blc_fifo /usr/local/bin/
