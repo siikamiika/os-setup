@@ -1,0 +1,18 @@
+#!/bin/bash
+
+VAR_TO_UPSERT="$1"
+VAL_TO_UPSERT="$2"
+ENV=~/.config/environment.d/envvars.conf
+
+if [ ! -e "$ENV" ]; then
+    mkdir -p "$(dirname "$ENV")"
+    touch "$ENV"
+fi
+
+if grep -q "^$VAR_TO_UPSERT=" "$ENV"; then
+    sed \
+        -e "/^$VAR_TO_UPSERT=.*/c $VAR_TO_UPSERT=$VAL_TO_UPSERT" \
+        -i "$ENV"
+else
+    echo "$VAR_TO_UPSERT=$VAL_TO_UPSERT" >> "$ENV"
+fi
