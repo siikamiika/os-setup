@@ -1,1 +1,2 @@
 - https://github.com/dracut-crypt-ssh/dracut-crypt-ssh
+- https://github.com/gsauthof/dracut-sshd
