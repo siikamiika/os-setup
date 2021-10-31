@@ -1,0 +1,2 @@
+- https://codeberg.org/dnkl/foot
+    - sixel

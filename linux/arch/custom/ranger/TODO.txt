@@ -1,0 +1,4 @@
+- sixel
+    - https://github.com/ranger/ranger/issues/723
+    - https://github.com/ranger/ranger/pull/2234
+    - https://github.com/ranger/ranger/pull/2466
