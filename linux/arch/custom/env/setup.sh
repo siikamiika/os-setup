@@ -7,7 +7,7 @@ sudo cp ./upsert_user_env /usr/local/bin/
 
 # default software
 upsert_env EDITOR /usr/bin/nvim
-upsert_user_env DMENU /usr/local/bin/fzf-launcher
+upsert_user_env DMENU fzf-launcher
 
 # path
 upsert_user_env PATH '"$PATH:${HOME}/.local/bin"'
