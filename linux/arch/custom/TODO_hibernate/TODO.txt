@@ -1,2 +1,3 @@
 - swap
 - kernel
+- https://wiki.archlinux.org/title/Power_management#Power_management_with_systemd
