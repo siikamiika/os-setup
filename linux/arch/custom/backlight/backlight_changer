@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 # idea: https://github.com/RPigott/blight
 # adapted to also print the new value as a percentage
