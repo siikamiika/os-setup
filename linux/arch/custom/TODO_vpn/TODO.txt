@@ -3,3 +3,8 @@
 - https://gitlab.com/NickCao/RAIT
 - https://www.jordanwhited.com/posts/wireguard-endpoint-discovery-nat-traversal/
 - https://github.com/samyk/slipstream
+- https://lists.zx2c4.com/pipermail/wireguard/2017-December/002201.html
+- https://notes.superlogical.ch/pages/note_wg/nolayer2/
+    - GRE https://developers.redhat.com/blog/2019/05/17/an-introduction-to-linux-virtual-interfaces-tunnels
+- VXLAN
+- L2TP
