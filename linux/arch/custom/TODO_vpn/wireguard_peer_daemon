@@ -33,23 +33,50 @@ class WireguardConfig:
     def add_peer(self, public_key: str, endpoint: Optional[str]=None) -> dict:
         if public_key in self._peers:
             raise Exception(f'Peer already exists for public key {public_key}')
-        psk_proc = subprocess.run(['wg', 'genpsk'], stdout=subprocess.PIPE)
-        if not psk_proc.stdout:
-            raise Exception('Could not generate PSK')
-        psk = psk_proc.stdout.decode('utf-8').rstrip('\n')
+        psk = self._gen_psk()
         address = self._get_available_address()
+
+        # add new peer to own config
         peer = {
             'type': 'Peer',
             'fields': {
                 'PublicKey': public_key,
                 'PresharedKey': psk,
-                'AllowedIPs': str(address),
+                'AllowedIPs': str(ipaddress.IPv4Network(address)),
             }
         }
         if endpoint:
             peer['fields']['Endpoint'] = endpoint
         self._peers[public_key] = peer
-        return peer
+
+        if self._interface is None:
+            raise Exception('Interface missing')
+
+        interface_fields = self._interface['fields']
+        ip_interface = ipaddress.IPv4Interface(interface_fields['Address'])
+
+        # return new peer as interface and interface as peer
+        return {
+            'interface': {
+                'type': 'Interface',
+                'fields': {
+                    'Address': str(ipaddress.IPv4Interface((
+                        str(address),
+                        str(ipaddress.IPv4Interface(interface_fields['Address']).netmask)
+                    ))),
+                }
+            },
+            'peer': {
+                'type': 'Peer',
+                'fields': {
+                    'PublicKey': self._get_pubkey(),
+                    'PresharedKey': psk,
+                    'AllowedIPs': str(ipaddress.IPv4Network(ip_interface.ip)),
+                    # peer is expected to know how to substitute the IP/host
+                    'Endpoint': f'0.0.0.0:{interface_fields["ListenPort"]}',
+                }
+            }
+        }
 
     def set_peer_endpoint(self, public_key: str, preshared_key: str, endpoint: str) -> dict:
         peer = self._peers[public_key]
@@ -58,10 +85,8 @@ class WireguardConfig:
         peer['fields']['Endpoint'] = endpoint
         return peer
 
-    def _get_available_address(self) -> ipaddress.IPv4Network:
-        if self._interface is None:
-            raise Exception('Interface missing')
-        interface = ipaddress.IPv4Interface(self._interface['fields']['Address'])
+    def _get_available_address(self) -> ipaddress.IPv4Address:
+        interface = self._get_ip_interface()
         network = interface.network
         reserved = {interface.ip, network.network_address}
         for peer in self._peers.values():
@@ -71,8 +96,13 @@ class WireguardConfig:
                     reserved |= set(peer_network)
         for ip in network:
             if ip not in reserved:
-                return ipaddress.IPv4Network(ip)
+                return ip
         raise Exception('Address space exhausted')
+
+    def _get_ip_interface(self):
+        if self._interface is None:
+            raise Exception('Interface missing')
+        return ipaddress.IPv4Interface(self._interface['fields']['Address'])
 
     def _parse(self):
         with open('/etc/wireguard/wg0.conf') as f:
@@ -112,6 +142,29 @@ class WireguardConfig:
             if v:
                 fields.append(f'{k} = {v}')
         return '\n'.join([header, *fields])
+
+    def _gen_psk(self):
+        psk_proc = subprocess.run(['wg', 'genpsk'], stdout=subprocess.PIPE)
+        if not psk_proc.stdout:
+            raise Exception('Could not generate PSK')
+        return psk_proc.stdout.decode('utf-8').rstrip('\n')
+
+    def _get_pubkey(self):
+        if self._interface is None:
+            raise Exception('Interface missing')
+        pubkey_proc = subprocess.Popen(
+            ['wg', 'pubkey'],
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE
+        )
+        if not pubkey_proc.stdin:
+            raise Exception('Could not generate public key')
+        private_key = self._interface['fields']['PrivateKey'] + '\n'
+        pubkey_proc.stdin.write(private_key.encode('utf-8'))
+        pubkey_proc.stdin.close()
+        if not pubkey_proc.stdout:
+            raise Exception('Could not generate public key')
+        return pubkey_proc.stdout.read().decode('utf-8').rstrip('\n')
 
 
 class WireguardPeerServer(socketserver.UnixStreamServer):
