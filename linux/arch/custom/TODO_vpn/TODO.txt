@@ -9,3 +9,6 @@
 - VXLAN
 - L2TP
 - one pubkey per user (sqlite in /var/local/)
+- obfuscation
+    - https://github.com/wangyu-/udp2raw
+    - https://github.com/rfc1036/udptunnel
