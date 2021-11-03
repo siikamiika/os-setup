@@ -13,3 +13,5 @@
     - https://github.com/wangyu-/udp2raw
     - https://github.com/rfc1036/udptunnel
 - peer daemon systemd unit
+- autostart
+- key rotation
