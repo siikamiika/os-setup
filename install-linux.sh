@@ -148,6 +148,10 @@ configure_network()
 uri=http://ping.archlinux.org/nm-check.txt
 interval=0"\
     > /etc/NetworkManager/conf.d/20-connectivity.conf
+    echo "\
+[keyfile]
+unmanaged-devices=type:wireguard"\
+    > /etc/NetworkManager/conf.d/unmanaged.conf
     systemctl enable NetworkManager.service
 }
 
