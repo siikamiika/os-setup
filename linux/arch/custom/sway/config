@@ -90,6 +90,9 @@ bindsym $mod+Mod1+Right move workspace to output right
 bindsym $mod+Mod1+h move workspace to output left
 bindsym $mod+Mod1+l move workspace to output right
 
+# rotate current output
+bindsym $mod+Mod1+r exec swaymsg output "$(swaymsg -t get_outputs | jq -r '.[] | select(.focused?) | .name')" transform 90 clockwise
+
 # scratchpad
 bindsym $mod+g move scratchpad
 bindsym $mod+d scratchpad show
