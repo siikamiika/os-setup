@@ -1,1 +1,4 @@
 - disable workspace wrap https://github.com/i3/i3/issues/3900
+- rotate touchpad
+    - https://askubuntu.com/questions/1275038/coordinate-transformation-matrix-and-libinput-calibration-matrix-how-are-t
+    - man sway-input calibration_matrix
