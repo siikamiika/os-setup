@@ -1,0 +1,20 @@
+#!/bin/sh
+
+REMOTE_HOST="$1"
+
+sshrun()
+{
+    ssh "$REMOTE_HOST" -- "$@"
+}
+
+PRIVKEY="$(sudo grep PrivateKey /etc/wireguard/wg0.conf | head -1 | awk '{print $3}')"
+if [ -z "$PRIVKEY" ]; then
+    echo "Could not read private key"
+    exit 1
+fi
+
+export PUBKEY="$(echo "$PRIVKEY" | wg pubkey)"
+jq -cRn '{
+    command: "add_peer",
+    data: {public_key: env.PUBKEY}
+}' | sshrun socat - UNIX-CONNECT:/run/wireguard_peer.sock | jq
