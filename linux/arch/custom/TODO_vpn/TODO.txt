@@ -15,3 +15,5 @@
 - peer daemon systemd unit
 - autostart
 - key rotation
+    - wg syncconf wg0 <(wg-quick strip wg0)
+- keepalive
