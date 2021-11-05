@@ -17,3 +17,5 @@
     - wg syncconf wg0 <(wg-quick strip wg0)
 - keepalive
     - on demand
+- server-client communication
+    - https://youtu.be/88GyLoZbDNw?t=568
