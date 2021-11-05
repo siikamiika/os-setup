@@ -34,3 +34,4 @@ PRIVKEY="$(wg genkey)"
 (umask 0077 && interface_tmpl "$ADDRESS" "$LISTEN_PORT" "$PRIVKEY" > "$CONF_FILE")
 
 groupadd -f wireguard_users
+sudo systemctl enable --now wg-quick@wg0
