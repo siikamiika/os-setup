@@ -320,8 +320,9 @@ class WireguardPeerRequestHandler(socketserver.StreamRequestHandler):
             uid = self._get_uid()
             command_name = command['command']
             if command_name == 'add_peer':
+                endpoint = command['data'].get('endpoint')
                 public_key = command['data']['public_key']
-                result['data'] = self._config_manager.add_peer(uid, public_key)
+                result['data'] = self._config_manager.add_peer(uid, public_key, endpoint)
             elif command_name == 'set_peer_endpoint':
                 endpoint = command['data']['endpoint']
                 result['data'] = self._config_manager.set_peer_endpoint(uid, endpoint)
