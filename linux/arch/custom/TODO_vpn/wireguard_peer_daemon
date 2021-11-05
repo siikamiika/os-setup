@@ -171,6 +171,7 @@ class WireguardConfigManager:
     def __init__(self):
         self._config = WireguardConfig('/etc/wireguard/wg0.conf')
         self._wireguard_users = WireguardUsers()
+        self._meta_config = self._load_meta_config()
 
     def add_peer(
         self,
@@ -201,27 +202,30 @@ class WireguardConfigManager:
         this_interface_mask = ipaddress.IPv4Interface(this_interface['Address']).netmask
         ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
 
+        interface_conf = {
+            'type': 'Interface',
+            'fields': {
+                'Address': str(ipaddress.IPv4Interface((
+                    str(new_peer_address),
+                    str(this_interface_mask)
+                ))),
+            }
+        }
+
+        peer_conf = {
+            'type': 'Peer',
+            'fields': {
+                'PublicKey': self._get_pubkey(),
+                'PresharedKey': new_peer_psk,
+                'AllowedIPs': str(ipaddress.IPv4Network(ip_interface.ip)),
+                'Endpoint': f'{self._meta_config["endpoint_host"]}:{this_interface["ListenPort"]}',
+            }
+        }
+
         # return new peer as interface and interface as peer
         return {
-            'interface': {
-                'type': 'Interface',
-                'fields': {
-                    'Address': str(ipaddress.IPv4Interface((
-                        str(new_peer_address),
-                        str(this_interface_mask)
-                    ))),
-                }
-            },
-            'peer': {
-                'type': 'Peer',
-                'fields': {
-                    'PublicKey': self._get_pubkey(),
-                    'PresharedKey': new_peer_psk,
-                    'AllowedIPs': str(ipaddress.IPv4Network(ip_interface.ip)),
-                    # peer is expected to know how to substitute the IP/host
-                    'Endpoint': f'0.0.0.0:{this_interface["ListenPort"]}',
-                }
-            }
+            'interface': interface_conf,
+            'peer': peer_conf,
         }
 
     def set_peer_endpoint(self, uid: int, endpoint: Optional[str]) -> Dict[str, str]:
@@ -271,6 +275,13 @@ class WireguardConfigManager:
         if not pubkey_proc.stdout:
             raise Exception('Could not generate public key')
         return pubkey_proc.stdout.read().decode('utf-8').rstrip('\n')
+
+    def _load_meta_config(self):
+        meta_config = {'endpoint_host': '0.0.0.0'}
+        with contextlib.suppress(FileNotFoundError):
+            with open('/usr/local/etc/wireguard_peer_daemon.json') as f:
+                meta_config.update(json.load(f))
+        return meta_config
 
 
 class WireguardPeerServer(socketserver.UnixStreamServer):
