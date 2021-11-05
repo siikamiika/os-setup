@@ -29,3 +29,4 @@
         - also: browser
     - symmetric encryption with PSK!
         - AES etc
+    - ssh unix socket forwarding (pairing)
