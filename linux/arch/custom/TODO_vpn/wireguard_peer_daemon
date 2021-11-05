@@ -13,6 +13,7 @@ import sqlite3
 import struct
 import socket
 import traceback
+import base64
 from typing import Optional, Dict, Any, Iterator
 
 
@@ -90,14 +91,14 @@ class WireguardConfig:
                 if field in peer['fields']:
                     del peer['fields'][field]
             else:
-                peer['fields'][field] = value
+                peer['fields'][field] = self._validate(field, value)
 
     def add_peer(self, public_key: str, fields: Dict[str, Optional[str]]):
         if public_key in self._peers:
             raise Exception('Peer already exists')
         self._peers[public_key] = {
             'type': 'Peer',
-            'fields': {k: v for k, v in fields.items() if v is not None}
+            'fields': {k: self._validate(k, v) for k, v in fields.items() if v is not None}
         }
 
     def delete_peer(self, public_key: str):
@@ -153,6 +154,17 @@ class WireguardConfig:
             else:
                 raise Exception(f'Invalid field: {line}')
         return block_data
+
+    def _validate(self, field: str, value: str) -> str:
+        if field in {'PublicKey', 'PresharedKey'}:
+            value1 = value.encode('utf-8')
+            value2 = base64.b64encode(base64.b64decode(value1))
+            if value1 != value2:
+                raise Exception(f'Invalid base64 value: {value}')
+        else:
+            if re.search(r'[\r\n]', value):
+                raise Exception(f'Value cannot contain line breaks')
+        return value
 
 
 class WireguardConfigManager:
