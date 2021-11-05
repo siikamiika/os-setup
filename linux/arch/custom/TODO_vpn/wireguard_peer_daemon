@@ -9,111 +9,75 @@ import grp
 import ipaddress
 import subprocess
 import json
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 
 class WireguardConfig:
     _FIELD_RE = re.compile(r'^(?P<key>[a-zA-Z]+)\s*=\s*(?P<value>.+)$')
 
-    def __init__(self):
+    def __init__(self, path):
+        self._path = path
         self._interface = None
         self._peers = {}
         self._parse()
 
-    def write(self):
+    # interface
+    def get_interface(self) -> Dict[str, str]:
         if self._interface is None:
-            raise Exception('Interface missing')
-        with open('/etc/wireguard/wg0.conf', 'w') as f:
-            block_sources = [self._interface, *self._peers.values()]
-            blocks = map(self._construct_block, block_sources)
-            f.write('\n\n'.join(blocks) + '\n')
+            raise Exception('Config doesn\'t have interface')
+        return self._interface['fields']
 
-    def has_peer(self, public_key: str) -> bool:
+    # peers
+    def has_peer(self, public_key: str):
         return public_key in self._peers
 
-    def add_peer(self, public_key: str, endpoint: Optional[str]=None) -> dict:
-        if public_key in self._peers:
-            raise Exception(f'Peer already exists for public key {public_key}')
-        psk = self._gen_psk()
-        address = self._get_available_address()
+    def get_peer(self, public_key: str) -> Dict[str, str]:
+        return dict(self._peers[public_key]['fields'])
 
-        # add new peer to own config
-        peer = {
-            'type': 'Peer',
-            'fields': {
-                'PublicKey': public_key,
-                'PresharedKey': psk,
-                'AllowedIPs': str(ipaddress.IPv4Network(address)),
-            }
-        }
-        if endpoint:
-            peer['fields']['Endpoint'] = endpoint
-        self._peers[public_key] = peer
-
-        if self._interface is None:
-            raise Exception('Interface missing')
-
-        interface_fields = self._interface['fields']
-        ip_interface = ipaddress.IPv4Interface(interface_fields['Address'])
-
-        # return new peer as interface and interface as peer
-        return {
-            'interface': {
-                'type': 'Interface',
-                'fields': {
-                    'Address': str(ipaddress.IPv4Interface((
-                        str(address),
-                        str(ipaddress.IPv4Interface(interface_fields['Address']).netmask)
-                    ))),
-                }
-            },
-            'peer': {
-                'type': 'Peer',
-                'fields': {
-                    'PublicKey': self._get_pubkey(),
-                    'PresharedKey': psk,
-                    'AllowedIPs': str(ipaddress.IPv4Network(ip_interface.ip)),
-                    # peer is expected to know how to substitute the IP/host
-                    'Endpoint': f'0.0.0.0:{interface_fields["ListenPort"]}',
-                }
-            }
-        }
-
-    def set_peer_endpoint(self, public_key: str, preshared_key: str, endpoint: str) -> dict:
-        peer = self._peers[public_key]
-        if peer['fields']['PresharedKey'] != preshared_key:
-            raise Exception(f'Invalid PSK: {preshared_key}')
-        peer['fields']['Endpoint'] = endpoint
-        return peer
-
-    def _get_available_address(self) -> ipaddress.IPv4Address:
-        interface = self._get_ip_interface()
-        network = interface.network
-        reserved = {interface.ip, network.network_address}
+    def iter_peers(self) -> Iterator[Dict[str, Optional[str]]]:
         for peer in self._peers.values():
-            for peer_network in peer['fields']['AllowedIPs'].split(', '):
-                peer_network = ipaddress.IPv4Network(peer_network)
-                if peer_network.subnet_of(network):
-                    reserved |= set(peer_network)
-        for ip in network:
-            if ip not in reserved:
-                return ip
-        raise Exception('Address space exhausted')
+            yield peer['fields']
 
-    def _get_ip_interface(self):
-        if self._interface is None:
-            raise Exception('Interface missing')
-        return ipaddress.IPv4Interface(self._interface['fields']['Address'])
+    def set_peer_field(self, public_key: str, field: str, value: Optional[str]):
+        if value is None:
+            del self._peers[public_key]['fields'][field]
+        else:
+            self._peers[public_key]['fields'][field] = value
+
+    def add_peer(self, public_key: str, fields: Dict[str, Optional[str]]):
+        self._peers[public_key] = {
+            'type': 'Peer',
+            'fields': fields
+        }
+
+    # persist
+    def save(self):
+        block_sources = [self._interface, *self._peers.values()]
+        blocks = map(self._construct_block, block_sources)
+        content = '\n\n'.join(blocks) + '\n'
+        with open(self._path, 'w') as f:
+            f.write(content)
+
+    # private
+    def _construct_block(self, block: Dict[str, Any]) -> str:
+        header = '[' + block['type'] + ']'
+        fields = []
+        for k, v in block['fields'].items():
+            if v:
+                fields.append(f'{k} = {v}')
+        return '\n'.join([header, *fields])
 
     def _parse(self):
-        with open('/etc/wireguard/wg0.conf') as f:
+        with open(self._path) as f:
             for block in f.read().split('\n\n'):
                 parsed_block = self._parse_block(block)
                 if parsed_block['type'] == 'Interface':
                     self._interface = parsed_block
                 elif parsed_block['type'] == 'Peer':
                     self._peers[parsed_block['fields']['PublicKey']] = parsed_block
+                else:
+                    raise Exception(f'Cannot parse block type {parsed_block["type"]}')
 
-    def _parse_block(self, block: str) -> dict:
+    def _parse_block(self, block: str) -> Dict[str, Any]:
         block_data = {
             'type': None,
             'fields': {}
@@ -135,23 +99,97 @@ class WireguardConfig:
                 raise Exception(f'Invalid field: {line}')
         return block_data
 
-    def _construct_block(self, block: dict) -> str:
-        header = '[' + block['type'] + ']'
-        fields = []
-        for k, v in block['fields'].items():
-            if v:
-                fields.append(f'{k} = {v}')
-        return '\n'.join([header, *fields])
 
-    def _gen_psk(self):
+class WireguardConfigManager:
+    def __init__(self):
+        self._config = WireguardConfig('/etc/wireguard/wg0.conf')
+
+    def add_peer(
+        self,
+        public_key: str,
+        endpoint: Optional[str]=None
+    ) -> Dict[str, Dict[str, Any]]:
+        # TODO allow overriding pubkey when an existing one can be matched to a user
+        if self._config.has_peer(public_key):
+            raise Exception(f'Peer already exists for public key {public_key}')
+        new_peer_psk = self._gen_psk()
+        new_peer_address = self._get_available_address()
+
+        # add new peer to own config
+        self._config.add_peer(public_key, {
+            'PublicKey': public_key,
+            'PresharedKey': new_peer_psk,
+            'AllowedIPs': str(ipaddress.IPv4Network(new_peer_address)),
+            'Endpoint': endpoint,
+        })
+
+        this_interface = self._config.get_interface()
+        this_interface_mask = ipaddress.IPv4Interface(this_interface['Address']).netmask
+        ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
+
+        # return new peer as interface and interface as peer
+        return {
+            'interface': {
+                'type': 'Interface',
+                'fields': {
+                    'Address': str(ipaddress.IPv4Interface((
+                        str(new_peer_address),
+                        str(this_interface_mask)
+                    ))),
+                }
+            },
+            'peer': {
+                'type': 'Peer',
+                'fields': {
+                    'PublicKey': self._get_pubkey(),
+                    'PresharedKey': new_peer_psk,
+                    'AllowedIPs': str(ipaddress.IPv4Network(ip_interface.ip)),
+                    # peer is expected to know how to substitute the IP/host
+                    'Endpoint': f'0.0.0.0:{this_interface["ListenPort"]}',
+                }
+            }
+        }
+
+    def set_peer_endpoint(
+        self,
+        public_key: str,
+        preshared_key: str,
+        endpoint: Optional[str]
+    ) -> Dict[str, str]:
+        peer = self._config.get_peer(public_key)
+        if peer['PresharedKey'] != preshared_key:
+            raise Exception(f'Invalid PresharedKey {preshared_key} for PublicKey {public_key}')
+        self._config.set_peer_field(public_key, 'Endpoint', endpoint)
+        return self._config.get_peer(public_key)
+
+    def save(self):
+        self._config.save()
+
+    def _get_available_address(self) -> ipaddress.IPv4Address:
+        interface = self._config.get_interface()
+        ip_interface = ipaddress.IPv4Interface(interface['Address'])
+        network = ip_interface.network
+        reserved = {ip_interface.ip, network.network_address}
+        for peer in self._config.iter_peers():
+            if 'AllowedIPs' not in peer or peer['AllowedIPs'] is None:
+                raise Exception(f'Peer {peer["PublicKey"]} is missing AllowedIPs')
+            for peer_network in peer['AllowedIPs'].split(', '):
+                peer_network = ipaddress.IPv4Network(peer_network)
+                if peer_network.subnet_of(network):
+                    reserved |= set(peer_network)
+        for ip in network:
+            if ip not in reserved:
+                return ip
+        raise Exception('Address space exhausted')
+
+    def _gen_psk(self) -> str:
         psk_proc = subprocess.run(['wg', 'genpsk'], stdout=subprocess.PIPE)
         if not psk_proc.stdout:
             raise Exception('Could not generate PSK')
         return psk_proc.stdout.decode('utf-8').rstrip('\n')
 
-    def _get_pubkey(self):
-        if self._interface is None:
-            raise Exception('Interface missing')
+    def _get_pubkey(self) -> str:
+        interface = self._config.get_interface()
         pubkey_proc = subprocess.Popen(
             ['wg', 'pubkey'],
             stdout=subprocess.PIPE,
@@ -159,7 +197,7 @@ class WireguardConfig:
         )
         if not pubkey_proc.stdin:
             raise Exception('Could not generate public key')
-        private_key = self._interface['fields']['PrivateKey'] + '\n'
+        private_key = interface['PrivateKey'] + '\n'
         pubkey_proc.stdin.write(private_key.encode('utf-8'))
         pubkey_proc.stdin.close()
         if not pubkey_proc.stdout:
@@ -168,6 +206,11 @@ class WireguardConfig:
 
 
 class WireguardPeerServer(socketserver.UnixStreamServer):
+
+    def __init__(self, *args, **kwargs):
+        config_manager = kwargs.pop('config_manager')
+        super().__init__(*args, **kwargs)
+        self.config_manager: WireguardConfigManager = config_manager
 
     def server_bind(self):
         fd = self.socket.fileno()
@@ -189,41 +232,50 @@ class WireguardPeerServer(socketserver.UnixStreamServer):
 
 class WireguardPeerRequestHandler(socketserver.StreamRequestHandler):
 
+    server: WireguardPeerServer
+
+    def setup(self, *args, **kwargs):
+        self._config_manager = self.server.config_manager
+        super().setup(*args, **kwargs)
+
     def handle(self):
         line = self.rfile.readline()
         command = json.loads(line)
         self._handle_command(command)
 
-    def _handle_command(self, command):
+    def _handle_command(self, command: Dict[str, Any]):
         result: Dict[str, Any] = {
             'status': None,
             'data': None
         }
-        config = WireguardConfig()
         try:
             command_name = command['command']
             if command_name == 'add_peer':
                 public_key = command['data']['public_key']
-                result['data'] = config.add_peer(public_key)
+                result['data'] = self._config_manager.add_peer(public_key)
             elif command_name == 'set_peer_endpoint':
                 public_key = command['data']['public_key']
                 preshared_key = command['data']['preshared_key']
                 endpoint = command['data']['endpoint']
-                result['data'] = config.set_peer_endpoint(public_key, preshared_key, endpoint)
+                result['data'] = self._config_manager.set_peer_endpoint(public_key, preshared_key, endpoint)
             else:
                 raise Exception(f'Unknown command: {command_name}')
             result['status'] = 'ok'
+            self._config_manager.save()
         except Exception as e:
             result['status'] = 'error'
             result['data'] = str(e)
-        config.write()
         self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
 
 def main():
     socket_path = '/run/wireguard_peer.sock'
     with contextlib.suppress(FileNotFoundError):
         os.remove(socket_path)
-    server = WireguardPeerServer(socket_path, WireguardPeerRequestHandler)
+    server = WireguardPeerServer(
+        socket_path,
+        WireguardPeerRequestHandler,
+        config_manager=WireguardConfigManager()
+    )
     server.serve_forever()
 
 if __name__ == '__main__':
