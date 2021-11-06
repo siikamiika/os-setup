@@ -29,4 +29,5 @@
         - also: browser
     - symmetric encryption with PSK!
         - AES etc
+        - HMAC
     - ssh unix socket forwarding (pairing)
