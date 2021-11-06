@@ -61,3 +61,4 @@
                   that B has changed its index, it challenges B again.
         - no additional encryption
     - ssh unix socket forwarding (pairing)
+- pair without an existing config

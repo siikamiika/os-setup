@@ -167,6 +167,7 @@ class WireguardConfig:
 
     # peer only for now
     def _validate(self, field: str, value: str) -> str:
+        # TODO handle fields properly
         if field in {'PublicKey', 'PresharedKey'}:
             value1 = value.encode('utf-8')
             value2 = base64.b64encode(base64.b64decode(value1))
@@ -182,7 +183,7 @@ class WireguardConfig:
 
 class WireguardLocalUserAuthentication:
     """
-    Authenticate a user based on their GID and add
+    Authenticate a user based on their group membership and add
     public key to the database
     """
     def __init__(self, wireguard_users: WireguardUsers, wireguard_config: WireguardConfig):
@@ -265,7 +266,7 @@ class WireguardLocalUserRequestHandler(socketserver.StreamRequestHandler):
             self._handle_command(command)
 
     def _handle_command(self, command: Dict[str, Any]):
-        result = self.server.command_handler.handle(command)
+        result = self.server.command_handler.handle(command, 'local_user')
         self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
 
 
@@ -275,15 +276,15 @@ class WireguardCommandHandler:
         self._config = config
         self._meta_config = meta_config
 
-    def handle(self, command: Dict[str, Any]):
+    def handle(self, command: Dict[str, Any], source: str):
         result: Dict[str, Any] = {
             'status': None,
             'data': None
         }
         try:
-            if command['command'] == 'add_peer':
-                result['data'] = self._handle_add_peer(command)
-            elif command['command'] == 'update_peer_fields':
+            if command['command'] == 'pair' and source == 'local_user':
+                result['data'] = self._handle_pair(command)
+            elif command['command'] == 'update_peer_fields' and source == 'local_user':
                 result['data'] = self._handle_update_peer_fields(command)
             else:
                 raise Exception(f'Unexpected command: {command["command"]}')
@@ -295,7 +296,10 @@ class WireguardCommandHandler:
         return result
 
     # command handlers
-    def _handle_add_peer(self, command: Dict[str, Any]):
+    def _handle_pair(self, command: Dict[str, Any]):
+        """
+        Handle a pairing request by a client assuming that we are the server
+        """
         public_key = command['public_key']
         fields = command['data']['fields']
 
@@ -343,6 +347,9 @@ class WireguardCommandHandler:
         }
 
     def _handle_update_peer_fields(self, command: Dict[str, Any]) -> Dict[str, str]:
+        """
+        TODO
+        """
         public_key = command['public_key']
         fields = command['data']['fields']
 
