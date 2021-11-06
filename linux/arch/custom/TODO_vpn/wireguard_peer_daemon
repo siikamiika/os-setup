@@ -35,9 +35,11 @@ class WireguardUsers:
         return None
 
     def add_public_key(self, uid: int, public_key: str):
+        # Allow the same uid to update their public key but abort when
+        # another uid tries to reuse one (see CREATE TABLE)
         self._execute(
             'INSERT INTO wireguard_users (uid, public_key) VALUES (?, ?) '
-            'ON CONFLICT DO UPDATE SET public_key = ?',
+            'ON CONFLICT(uid) DO UPDATE SET public_key = ?',
             [uid, public_key, public_key]
         )
 
@@ -50,8 +52,14 @@ class WireguardUsers:
         return sqlite3.connect(path)
 
     def _ensure_tables(self):
-        self._execute('CREATE TABLE IF NOT EXISTS wireguard_users (uid INTEGER UNIQUE, public_key TEXT)')
+        self._execute('''
+            CREATE TABLE IF NOT EXISTS wireguard_users (
+                uid INTEGER UNIQUE,
+                public_key TEXT UNIQUE ON CONFLICT ABORT
+            )
+        ''')
         self._execute('CREATE INDEX IF NOT EXISTS uid_idx ON wireguard_users (uid)')
+        self._execute('CREATE INDEX IF NOT EXISTS public_key_idx ON wireguard_users (public_key)')
 
     def _execute(self, sql, params=[]):
         res = self._cur.execute(sql, params)
@@ -60,6 +68,7 @@ class WireguardUsers:
 
 
 class WireguardConfig:
+    # TODO write only, use sqlite DB for state
     _FIELD_RE = re.compile(r'^(?P<key>[a-zA-Z]+)\s*=\s*(?P<value>.+)$')
 
     def __init__(self, path):
@@ -85,8 +94,11 @@ class WireguardConfig:
         for peer in self._peers.values():
             yield peer['fields']
 
-    def set_peer_field(self, public_key: str, field: str, value: Optional[str]):
-        if (peer := self._peers.get(public_key)):
+    def update_peer_fields(self, public_key: str, fields: Dict[str, Optional[str]]):
+        peer = self._peers.get(public_key)
+        if peer is None:
+            raise Exception(f'Peer not found for public key {public_key}')
+        for field, value in fields.items():
             if value is None:
                 if field in peer['fields']:
                     del peer['fields'][field]
@@ -94,8 +106,6 @@ class WireguardConfig:
                 peer['fields'][field] = self._validate(field, value)
 
     def add_peer(self, public_key: str, fields: Dict[str, Optional[str]]):
-        if public_key in self._peers:
-            raise Exception('Peer already exists')
         self._peers[public_key] = {
             'type': 'Peer',
             'fields': {k: self._validate(k, v) for k, v in fields.items() if v is not None}
@@ -155,51 +165,155 @@ class WireguardConfig:
                 raise Exception(f'Invalid field: {line}')
         return block_data
 
+    # peer only for now
     def _validate(self, field: str, value: str) -> str:
         if field in {'PublicKey', 'PresharedKey'}:
             value1 = value.encode('utf-8')
             value2 = base64.b64encode(base64.b64decode(value1))
             if value1 != value2:
                 raise Exception(f'Invalid base64 value: {value}')
-        else:
+        elif field in {'AllowedIPs', 'Endpoint'}:
             if re.search(r'[\r\n]', value):
                 raise Exception(f'Value cannot contain line breaks')
+        else:
+            raise Exception(f'Unexpected field: {field}')
         return value
 
 
-class WireguardConfigManager:
-    def __init__(self):
-        self._config = WireguardConfig('/etc/wireguard/wg0.conf')
-        self._wireguard_users = WireguardUsers()
-        self._meta_config = self._load_meta_config()
+class WireguardLocalUserAuthentication:
+    """
+    Authenticate a user based on their GID and add
+    public key to the database
+    """
+    def __init__(self, wireguard_users: WireguardUsers, wireguard_config: WireguardConfig):
+        self._wireguard_users = wireguard_users
+        self._wireguard_config = wireguard_config
 
-    def add_peer(
-        self,
-        uid: int,
-        public_key: str,
-        endpoint: Optional[str]=None
-    ) -> Dict[str, Dict[str, Any]]:
+    # TODO handler typing?
+    def authenticate(self, handler) -> Optional[Dict]:
+        creds = handler.request.getsockopt(
+            socket.SOL_SOCKET,
+            socket.SO_PEERCRED,
+            struct.calcsize('3i')
+        )
+        _, uid, _ = struct.unpack('3i', creds)
+        user = pwd.getpwuid(uid)
+        wireguard_users_group = grp.getgrnam('wireguard_users')
+        if user.pw_name not in wireguard_users_group.gr_mem:
+            return None
+        command = json.loads(handler.rfile.readline())
+        public_key = command['public_key']
         old_public_key = self._wireguard_users.get_public_key(uid)
-        if old_public_key is not None:
-            self._config.delete_peer(old_public_key)
-        if self._config.has_peer(public_key):
-            raise Exception(f'Peer already exists for public key {public_key}')
+        if old_public_key == public_key:
+            return command
+        elif old_public_key is not None:
+            self._wireguard_config.delete_peer(old_public_key)
+            self._wireguard_config.save()
+        # will fail when trying to reuse a public key
         self._wireguard_users.add_public_key(uid, public_key)
+        return command
+
+
+class WireguardPeerAuthentication:
+    """
+    Authenticate an existing peer using HMAC
+    """
+    # def __init__(self, wireguard_config_manager: WireguardConfigManager):
+    #     self._wireguard_config_manager = wireguard_config_manager
+
+    # TODO handler typing?
+    def authenticate(self, handler) -> Optional[Dict]:
+        # TODO correct network interface
+        # TODO HMAC
+        pass
+
+
+class WireguardLocalUserServer(socketserver.UnixStreamServer):
+
+    def __init__(self, *args, **kwargs):
+        command_handler = kwargs.pop('command_handler')
+        authentication = kwargs.pop('authentication')
+        super().__init__(*args, **kwargs)
+        self.command_handler: WireguardCommandHandler = command_handler
+        self.authentication: WireguardLocalUserAuthentication = authentication
+
+    def server_bind(self):
+        fd = self.socket.fileno()
+        # restrict access to root before binding
+        os.fchmod(fd, 0o600)
+        super().server_bind()
+
+    def server_activate(self):
+        super().server_activate()
+        addr = self.server_address
+        if not isinstance(addr, str):
+            raise Exception(f'Unexpected server_address: {addr}')
+        # grant access to the wireguard_users group as well
+        root_user = pwd.getpwnam('root')
+        wireguard_users_group = grp.getgrnam('wireguard_users')
+        os.chown(addr, root_user.pw_uid, wireguard_users_group.gr_gid)
+        os.chmod(addr, 0o660)
+
+
+class WireguardLocalUserRequestHandler(socketserver.StreamRequestHandler):
+
+    server: WireguardLocalUserServer
+
+    def handle(self):
+        command = self.server.authentication.authenticate(self)
+        if command is not None:
+            self._handle_command(command)
+
+    def _handle_command(self, command: Dict[str, Any]):
+        result = self.server.command_handler.handle(command)
+        self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
+
+
+class WireguardCommandHandler:
+
+    def __init__(self, config: WireguardConfig, meta_config: Dict[str, Any]):
+        self._config = config
+        self._meta_config = meta_config
+
+    def handle(self, command: Dict[str, Any]):
+        result: Dict[str, Any] = {
+            'status': None,
+            'data': None
+        }
+        try:
+            if command['command'] == 'add_peer':
+                result['data'] = self._handle_add_peer(command)
+            elif command['command'] == 'update_peer_fields':
+                result['data'] = self._handle_update_peer_fields(command)
+            else:
+                raise Exception(f'Unexpected command: {command["command"]}')
+            result['status'] = 'ok'
+        except Exception as e:
+            result['status'] = 'error'
+            # TODO error debug level flag
+            result['data'] = ''.join(traceback.TracebackException.from_exception(e).format())
+        return result
+
+    # command handlers
+    def _handle_add_peer(self, command: Dict[str, Any]):
+        public_key = command['public_key']
+        fields = command['data']['fields']
+
+        self._config.delete_peer(public_key)
 
         new_peer_psk = self._gen_psk()
         new_peer_address = self._get_available_address()
 
         # add new peer to own config
         self._config.add_peer(public_key, {
+            **fields,
             'PublicKey': public_key,
             'PresharedKey': new_peer_psk,
             'AllowedIPs': str(ipaddress.IPv4Network(new_peer_address)),
-            'Endpoint': endpoint,
         })
         self._config.save()
 
         this_interface = self._config.get_interface()
-        this_interface_mask = ipaddress.IPv4Interface(this_interface['Address']).netmask
         ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
 
         interface_conf = {
@@ -207,7 +321,7 @@ class WireguardConfigManager:
             'fields': {
                 'Address': str(ipaddress.IPv4Interface((
                     str(new_peer_address),
-                    str(this_interface_mask)
+                    str(ip_interface.netmask)
                 ))),
             }
         }
@@ -228,15 +342,19 @@ class WireguardConfigManager:
             'peer': peer_conf,
         }
 
-    def set_peer_endpoint(self, uid: int, endpoint: Optional[str]) -> Dict[str, str]:
-        public_key = self._wireguard_users.get_public_key(uid)
-        if public_key is None:
-            raise Exception(f'Peer does not exist for user {uid}')
-        peer = self._config.get_peer(public_key)
-        self._config.set_peer_field(public_key, 'Endpoint', endpoint)
+    def _handle_update_peer_fields(self, command: Dict[str, Any]) -> Dict[str, str]:
+        public_key = command['public_key']
+        fields = command['data']['fields']
+
+        # TODO case sensitivity?
+        for field in ['PublicKey', 'PresharedKey', 'AllowedIPs']:
+            if field in fields:
+                raise Exception(f'Cannot update field {field}')
+        self._config.update_peer_fields(public_key, fields)
         self._config.save()
         return self._config.get_peer(public_key)
 
+    # misc
     def _get_available_address(self) -> ipaddress.IPv4Address:
         interface = self._config.get_interface()
         ip_interface = ipaddress.IPv4Interface(interface['Address'])
@@ -276,95 +394,44 @@ class WireguardConfigManager:
             raise Exception('Could not generate public key')
         return pubkey_proc.stdout.read().decode('utf-8').rstrip('\n')
 
-    def _load_meta_config(self):
-        meta_config = {'endpoint_host': '0.0.0.0'}
+
+class WireguardPeerDaemon:
+    def __init__(self):
+        self._wireguard_users = WireguardUsers()
+        self._wireguard_config = WireguardConfig('/etc/wireguard/wg0.conf')
+        self._config = self._load_config()
+        self._wireguard_command_handler = WireguardCommandHandler(self._wireguard_config, self._config)
+        self._local_user_server = self._get_local_user_server()
+
+    def start(self):
+        self._local_user_server.serve_forever()
+        # TODO TCP
+
+    def _get_local_user_server(self):
+        socket_path = '/run/wireguard_peer.sock'
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(socket_path)
+        return WireguardLocalUserServer(
+            socket_path,
+            WireguardLocalUserRequestHandler,
+            command_handler=self._wireguard_command_handler,
+            authentication=WireguardLocalUserAuthentication(
+                self._wireguard_users,
+                self._wireguard_config
+            )
+        )
+
+    def _load_config(self):
+        config = {'endpoint_host': '0.0.0.0'}
         with contextlib.suppress(FileNotFoundError):
             with open('/usr/local/etc/wireguard_peer_daemon.json') as f:
-                meta_config.update(json.load(f))
-        return meta_config
-
-
-class WireguardPeerServer(socketserver.UnixStreamServer):
-
-    def __init__(self, *args, **kwargs):
-        config_manager = kwargs.pop('config_manager')
-        super().__init__(*args, **kwargs)
-        self.config_manager: WireguardConfigManager = config_manager
-
-    def server_bind(self):
-        fd = self.socket.fileno()
-        # restrict access to root before binding
-        os.fchmod(fd, 0o600)
-        super().server_bind()
-
-    def server_activate(self):
-        super().server_activate()
-        addr = self.server_address
-        if not isinstance(addr, str):
-            raise Exception(f'Unexpected server_address: {addr}')
-        # grant access to the wireguard_users group as well
-        root_user = pwd.getpwnam('root')
-        wireguard_users_group = grp.getgrnam('wireguard_users')
-        os.chown(addr, root_user.pw_uid, wireguard_users_group.gr_gid)
-        os.chmod(addr, 0o660)
-
-
-class WireguardPeerRequestHandler(socketserver.StreamRequestHandler):
-
-    server: WireguardPeerServer
-
-    def setup(self, *args, **kwargs):
-        self._config_manager = self.server.config_manager
-        super().setup(*args, **kwargs)
-
-    def handle(self):
-        line = self.rfile.readline()
-        command = json.loads(line)
-        self._handle_command(command)
-
-    def _handle_command(self, command: Dict[str, Any]):
-        result: Dict[str, Any] = {
-            'status': None,
-            'data': None
-        }
-        try:
-            uid = self._get_uid()
-            command_name = command['command']
-            if command_name == 'add_peer':
-                endpoint = command['data'].get('endpoint')
-                public_key = command['data']['public_key']
-                result['data'] = self._config_manager.add_peer(uid, public_key, endpoint)
-            elif command_name == 'set_peer_endpoint':
-                endpoint = command['data']['endpoint']
-                result['data'] = self._config_manager.set_peer_endpoint(uid, endpoint)
-            else:
-                raise Exception(f'Unknown command: {command_name}')
-            result['status'] = 'ok'
-        except Exception as e:
-            result['status'] = 'error'
-            result['data'] = ''.join(traceback.TracebackException.from_exception(e).format())
-        self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
-
-    def _get_uid(self):
-        creds = self.request.getsockopt(
-            socket.SOL_SOCKET,
-            socket.SO_PEERCRED,
-            struct.calcsize('3i')
-        )
-        _, uid, _ = struct.unpack('3i', creds)
-        return uid
+                config.update(json.load(f))
+        return config
 
 
 def main():
-    socket_path = '/run/wireguard_peer.sock'
-    with contextlib.suppress(FileNotFoundError):
-        os.remove(socket_path)
-    server = WireguardPeerServer(
-        socket_path,
-        WireguardPeerRequestHandler,
-        config_manager=WireguardConfigManager()
-    )
-    server.serve_forever()
+    wireguard_peer_daemon = WireguardPeerDaemon()
+    wireguard_peer_daemon.start()
 
 
 if __name__ == '__main__':
