@@ -30,4 +30,5 @@
     - symmetric encryption with PSK!
         - AES etc
         - HMAC
+        - replay attacks
     - ssh unix socket forwarding (pairing)
