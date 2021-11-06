@@ -40,5 +40,13 @@
                 }
             - edge case: attacker controls NTP
                 - monotonic clock
+                - /proc/stat btime + time.monotonic()
+            - one more alternative https://tools.ietf.org/id/draft-ietf-babel-hmac-06.html
+                - ...In this situation, A discards the packet and challenges B to prove that it knows the HMAC key.
+                  It sends a "challenge request", a TLV containing a unique nonce, a value that has never been
+                  used before and will never be used again. B replies to the challenge request with a
+                  "challenge reply", a TLV containing a copy of the nonce chosen by A, in a packet protected by
+                  HMAC and containing the new value of B's PC. Since the nonce has never been used before, B's
+                  reply proves B's knowledge of the HMAC key and the freshness of the PC.
         - no additional encryption
     - ssh unix socket forwarding (pairing)
