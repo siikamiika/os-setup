@@ -31,6 +31,14 @@
         - content: {pubkey: <pubkey>, data: <data>, timestamp: 1234.56789}
         - replay attacks
             - 5 sec window, disallow duplicates within that
-            - alternative: include previous message in content
+            - alternative: include previous MAC in content
+                - content {
+                    pubkey: <pubkey>,
+                    data: <data>,
+                    timestamp: 1234.5678
+                    mac: HMAC(PSK, HMAC(PSK, content(-1), sha256)) | null  // 10 sec timeout
+                }
+            - edge case: attacker controls NTP
+                - monotonic clock
         - no additional encryption
     - ssh unix socket forwarding (pairing)
