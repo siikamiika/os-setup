@@ -27,8 +27,9 @@
     - https://youtu.be/88GyLoZbDNw?t=568
         - but: net.ipv4.ip_forward
         - also: browser
-    - symmetric encryption with PSK!
-        - AES etc
-        - HMAC
+    - HMAC(PSK, content, sha256)
+        - content: {pubkey: <pubkey>, data: <data>, timestamp: 1234.56789}
         - replay attacks
+            - 5 sec window, disallow duplicates within that
+        - no additional encryption
     - ssh unix socket forwarding (pairing)
