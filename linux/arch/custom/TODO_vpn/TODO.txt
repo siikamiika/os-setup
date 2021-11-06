@@ -31,5 +31,6 @@
         - content: {pubkey: <pubkey>, data: <data>, timestamp: 1234.56789}
         - replay attacks
             - 5 sec window, disallow duplicates within that
+            - alternative: include previous message in content
         - no additional encryption
     - ssh unix socket forwarding (pairing)
