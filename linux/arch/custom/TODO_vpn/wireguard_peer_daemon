@@ -473,7 +473,7 @@ class WireguardCommandHandler:
         subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
 
     def _reload_wireguard_config(self):
-        subprocess.Popen(['wg', 'syncconf', 'wg0', '/etc/wireguard/wg0.conf'])
+        subprocess.run('wg syncconf wg0 <(wg-quick strip wg0)', shell=True)
 
 
 class WireguardPeerDaemon:
