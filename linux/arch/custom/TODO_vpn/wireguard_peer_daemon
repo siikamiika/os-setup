@@ -127,6 +127,9 @@ class WireguardConfig:
 
     # persist
     def save(self):
+        if not os.path.isfile(self._path):
+            fd = os.open(self._path, os.O_CREAT, mode=0o600)
+            os.close(fd)
         block_sources = [self._interface, *self._peers.values()]
         blocks = map(self._construct_block, block_sources)
         content = '\n\n'.join(blocks) + '\n'
@@ -143,6 +146,8 @@ class WireguardConfig:
         return '\n'.join([header, *fields])
 
     def _parse(self):
+        if not os.path.isfile(self._path):
+            return
         with open(self._path) as f:
             for block in f.read().split('\n\n'):
                 parsed_block = self._parse_block(block)
@@ -152,6 +157,15 @@ class WireguardConfig:
                     self._peers[parsed_block['fields']['PublicKey']] = parsed_block
                 else:
                     raise Exception(f'Cannot parse block type {parsed_block["type"]}')
+        if self._interface is None:
+            self._interface = {
+                'type': 'Interface',
+                'fields': {
+                    'ListenPort': '51820',
+                    'PrivateKey': self._gen_privkey(),
+                }
+            }
+            self.save()
 
     def _parse_block(self, block: str) -> Dict[str, Any]:
         block_data = {
@@ -201,6 +215,12 @@ class WireguardConfig:
     def _validate_linebreak(self, value: str):
         if re.search(r'[\r\n]', value):
             raise Exception(f'Value cannot contain line breaks')
+
+    def _gen_privkey(self) -> str:
+        key_proc = subprocess.run(['wg', 'genkey'], stdout=subprocess.PIPE)
+        if not key_proc.stdout:
+            raise Exception('Could not generate key')
+        return key_proc.stdout.decode('utf-8').rstrip('\n')
 
 
 class WireguardLocalUserAuthentication:
@@ -312,6 +332,8 @@ class WireguardCommandHandler:
                 result['data'] = self._handle_pair(command)
             elif command['command'] == 'receive_pair' and source == 'root_user':
                 result['data'] = self._handle_receive_pair(command)
+            elif command['command'] == 'get_public_key' and source == 'root_user':
+                result['data'] = self._handle_get_public_key(command)
             elif command['command'] == 'update_peer_fields' and source in ['local_user', 'root_user']:
                 result['data'] = self._handle_update_peer_fields(command)
             else:
@@ -344,6 +366,7 @@ class WireguardCommandHandler:
             'AllowedIPs': str(ipaddress.IPv4Network(new_peer_address)),
         })
         self._config.save()
+        self._reload_wireguard_config()
 
         this_interface = self._config.get_interface()
         ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
@@ -384,8 +407,12 @@ class WireguardCommandHandler:
         self._config.add_peer(peer_public_key, peer_conf['fields'])
 
         self._config.save()
+        self._enable_wireguard()
 
         return {}
+
+    def _handle_get_public_key(self, command: Dict[str, Any]) -> Dict[str, Any]:
+        return {'PublicKey': self._get_pubkey()}
 
     def _handle_update_peer_fields(self, command: Dict[str, Any]) -> Dict[str, str]:
         """
@@ -441,6 +468,21 @@ class WireguardCommandHandler:
         if not pubkey_proc.stdout:
             raise Exception('Could not generate public key')
         return pubkey_proc.stdout.read().decode('utf-8').rstrip('\n')
+
+    def _enable_wireguard(self):
+        subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
+
+    def _reload_wireguard_config(self):
+        # wg-quick strip wg0
+        conf_proc = subprocess.run(['wg-quick', 'strip', 'wg0'], stdout=subprocess.PIPE)
+        if not conf_proc.stdout:
+            raise Exception('Could not get config')
+        conf = conf_proc.stdout.decode('utf-8').rstrip('\n')
+        syncconf_proc = subprocess.Popen(['wg', 'syncconf', 'wg0'], stdin=subprocess.PIPE)
+        if not syncconf_proc.stdin:
+            raise Exception('Could not sync config')
+        syncconf_proc.stdin.write(conf.encode('utf-8'))
+        syncconf_proc.stdin.close()
 
 
 class WireguardPeerDaemon:

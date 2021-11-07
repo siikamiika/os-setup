@@ -1,54 +1,15 @@
 #!/bin/sh
 
 SSH_HOST="$1"
-PEER_HOST="$2"
-
-WG_CONFIG=/etc/wireguard/wg0.conf
 
 sshrun()
 {
     ssh "$SSH_HOST" -- "$@"
 }
 
-PRIVKEY="$(sudo grep PrivateKey "$WG_CONFIG" | head -1 | awk '{print $3}')"
-if [ -z "$PRIVKEY" ]; then
-    echo "Could not read private key"
-    exit 1
-fi
+export PUBKEY=$(echo '{"command": "get_public_key"}' | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock | jq -r '.data.PublicKey')
 
-export PUBKEY="$(echo "$PRIVKEY" | wg pubkey)"
-RESPONSE="$(jq -cRn '{
-    command: "add_peer",
-    data: {public_key: env.PUBKEY}
-}' | sshrun socat - UNIX-CONNECT:/run/wireguard_peer.sock)"
-if [ -z "$RESPONSE" ]; then
-    echo "Empty response from server"
-    exit 1
-elif [ "$(echo "$RESPONSE" | jq -r '.status')" = "error" ]; then
-    echo "$RESPONSE"
-    exit 1
-fi
-
-INTERFACE_ADDRESS="$(echo "$RESPONSE" | jq -r '.data.interface.fields.Address')"
-sudo sed \
-    -e "/^Address = .*$/c Address = $INTERFACE_ADDRESS" \
-    -i "$WG_CONFIG"
-
-PEER_PUBKEY="$(echo "$RESPONSE" | jq -r '.data.peer.fields.PublicKey')"
-PEER_PSK="$(echo "$RESPONSE" | jq -r '.data.peer.fields.PresharedKey')"
-PEER_ALLOWED_IPS="$(echo "$RESPONSE" | jq -r '.data.peer.fields.AllowedIPs')"
-PEER_ENDPOINT="$(echo "$RESPONSE" | jq -r '.data.peer.fields.Endpoint' | sed -r "s/^0\\.0\\.0\\.0(.*)\$/$PEER_HOST\\1/")"
-
-if sudo grep -qF "$PEER_PUBKEY" "$WG_CONFIG"; then
-    echo "Peer already exists for public key $PEER_PUBKEY, remove it first"
-    exit 1
-fi
-
-echo "\
-
-[Peer]
-PublicKey = $PEER_PUBKEY
-PresharedKey = $PEER_PSK
-AllowedIPs = $PEER_ALLOWED_IPS
-Endpoint = $PEER_ENDPOINT"\
-| sudo tee -a "$WG_CONFIG" > /dev/null
+jq -cRn '{command: "pair", data: {public_key: env.PUBKEY}}' \
+    | sshrun socat - UNIX-CONNECT:/run/wireguard_peer.sock \
+    | jq '{command: "receive_pair", data: .}' \
+    | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock

@@ -62,3 +62,4 @@
         - no additional encryption
     - ssh unix socket forwarding (pairing)
 - pair without an existing config
+- dynamic port
