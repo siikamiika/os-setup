@@ -59,3 +59,4 @@
                   that B has changed its index, it challenges B again.
         - no additional encryption
 - dynamic port
+- https://en.wikipedia.org/wiki/OpenID
