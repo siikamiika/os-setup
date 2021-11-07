@@ -1,0 +1,7 @@
+- https://github.com/siikamiika/scripts/ --> windows
+- https://github.com/siikamiika/hid-emu/ (for gaming with shared input devices)
+    - TODO secure the socket better
+- https://www.varonis.com/blog/wmi-windows-management-instrumentation/
+    - https://www.nirsoft.net/utils/simple_wmi_view.html
+- win_starter_pack (old personal vm setup guide)
+    - cherry-pick, automate, extend
