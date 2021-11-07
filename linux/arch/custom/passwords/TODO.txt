@@ -1,5 +1,6 @@
 - https://github.com/libkeepass/pykeepass/issues/219
     - consider keepassxc cli
+    - use firefox lockwise db (read only)
 - reference implementation https://github.com/firecat53/keepmenu
     - contribute
 - firefox-tab-control integration (store domain of currently focused tab somewhere)
