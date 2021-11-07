@@ -147,6 +147,15 @@ class WireguardConfig:
 
     def _parse(self):
         if not os.path.isfile(self._path):
+            self._interface = {
+                'type': 'Interface',
+                'fields': {
+                    'Address': '10.0.0.1/24',
+                    'ListenPort': '51820',
+                    'PrivateKey': self._gen_privkey(),
+                }
+            }
+            self.save()
             return
         with open(self._path) as f:
             for block in f.read().split('\n\n'):
@@ -157,15 +166,6 @@ class WireguardConfig:
                     self._peers[parsed_block['fields']['PublicKey']] = parsed_block
                 else:
                     raise Exception(f'Cannot parse block type {parsed_block["type"]}')
-        if self._interface is None:
-            self._interface = {
-                'type': 'Interface',
-                'fields': {
-                    'ListenPort': '51820',
-                    'PrivateKey': self._gen_privkey(),
-                }
-            }
-            self.save()
 
     def _parse_block(self, block: str) -> Dict[str, Any]:
         block_data = {
