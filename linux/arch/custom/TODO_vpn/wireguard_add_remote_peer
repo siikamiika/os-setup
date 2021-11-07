@@ -9,7 +9,7 @@ sshrun()
 
 export PUBKEY=$(echo '{"command": "get_public_key"}' | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock | jq -r '.data.PublicKey')
 
-jq -cRn '{command: "pair", data: {public_key: env.PUBKEY}}' \
+jq -cRn '{command: "pair", public_key: env.PUBKEY, data: {fields: {}}}' \
     | sshrun socat - UNIX-CONNECT:/run/wireguard_peer.sock \
     | jq -c '{command: "receive_pair", data: .}' \
     | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock

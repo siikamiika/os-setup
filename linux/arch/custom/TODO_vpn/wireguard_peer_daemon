@@ -473,16 +473,7 @@ class WireguardCommandHandler:
         subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
 
     def _reload_wireguard_config(self):
-        # wg-quick strip wg0
-        conf_proc = subprocess.run(['wg-quick', 'strip', 'wg0'], stdout=subprocess.PIPE)
-        if not conf_proc.stdout:
-            raise Exception('Could not get config')
-        conf = conf_proc.stdout.decode('utf-8').rstrip('\n')
-        syncconf_proc = subprocess.Popen(['wg', 'syncconf', 'wg0'], stdin=subprocess.PIPE)
-        if not syncconf_proc.stdin:
-            raise Exception('Could not sync config')
-        syncconf_proc.stdin.write(conf.encode('utf-8'))
-        syncconf_proc.stdin.close()
+        subprocess.Popen(['wg', 'syncconf', 'wg0', '/etc/wireguard/wg0.conf'])
 
 
 class WireguardPeerDaemon:
