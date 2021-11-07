@@ -95,8 +95,8 @@ bindsym $mod+Mod1+r exec swaymsg output "$(swaymsg -t get_outputs | jq -r '.[] |
 bindsym $mod+Shift+Mod1+r exec swaymsg output "$(swaymsg -t get_outputs | jq -r '.[] | select(.focused?) | .name')" transform 90 anticlockwise
 
 # scratchpad
-bindsym $mod+g move scratchpad
-bindsym $mod+d scratchpad show
+# bindsym $mod+g move scratchpad
+# bindsym $mod+d scratchpad show
 #bindcode 132 scratchpad show
 
 # reload the configuration file
@@ -111,6 +111,13 @@ bindsym $mod+Control+h resize shrink width 50 px or 5 ppt
 bindsym $mod+Control+j resize grow height 50 px or 5 ppt
 bindsym $mod+Control+k resize shrink height 50 px or 5 ppt
 bindsym $mod+Control+l resize grow width 50 px or 5 ppt
+
+# modes
+bindsym $mod+g mode "remote_desktop"
+bindsym $mod+Shift+g nop
+mode "remote_desktop" {
+    bindsym $mod+Shift+g mode "default"
+}
 
 
 ########################################
