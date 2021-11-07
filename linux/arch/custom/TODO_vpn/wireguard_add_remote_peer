@@ -11,5 +11,5 @@ export PUBKEY=$(echo '{"command": "get_public_key"}' | sudo socat - UNIX-CONNECT
 
 jq -cRn '{command: "pair", data: {public_key: env.PUBKEY}}' \
     | sshrun socat - UNIX-CONNECT:/run/wireguard_peer.sock \
-    | jq '{command: "receive_pair", data: .}' \
+    | jq -c '{command: "receive_pair", data: .}' \
     | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock
