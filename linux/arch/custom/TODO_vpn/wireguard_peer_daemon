@@ -471,6 +471,7 @@ class WireguardCommandHandler:
 
     def _enable_wireguard(self):
         subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
+        self._reload_wireguard_config()
 
     def _reload_wireguard_config(self):
         subprocess.run('wg syncconf wg0 <(wg-quick strip wg0)', shell=True)
