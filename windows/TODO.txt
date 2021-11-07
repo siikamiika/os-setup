@@ -5,3 +5,6 @@
     - https://www.nirsoft.net/utils/simple_wmi_view.html
 - win_starter_pack (old personal vm setup guide)
     - cherry-pick, automate, extend
+- https://github.com/uup-dump
+    - LTSC?
+- windows 11 compatibility
