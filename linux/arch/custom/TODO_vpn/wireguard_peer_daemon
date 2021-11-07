@@ -83,6 +83,16 @@ class WireguardConfig:
             raise Exception('Config doesn\'t have interface')
         return self._interface['fields']
 
+    def update_interface_fields(self, fields: Dict[str, Optional[str]]):
+        if self._interface is None:
+            raise Exception('Config doesn\'t have interface')
+        for field, value in fields.items():
+            if value is None:
+                if field in self._interface['fields']:
+                    del self._interface['fields'][field]
+            else:
+                self._interface['fields'][field] = self._validate_interface_field(field, value)
+
     # peers
     def has_peer(self, public_key: str):
         return public_key in self._peers
@@ -103,12 +113,12 @@ class WireguardConfig:
                 if field in peer['fields']:
                     del peer['fields'][field]
             else:
-                peer['fields'][field] = self._validate(field, value)
+                peer['fields'][field] = self._validate_peer_field(field, value)
 
     def add_peer(self, public_key: str, fields: Dict[str, Optional[str]]):
         self._peers[public_key] = {
             'type': 'Peer',
-            'fields': {k: self._validate(k, v) for k, v in fields.items() if v is not None}
+            'fields': {k: self._validate_peer_field(k, v) for k, v in fields.items() if v is not None}
         }
 
     def delete_peer(self, public_key: str):
@@ -165,20 +175,32 @@ class WireguardConfig:
                 raise Exception(f'Invalid field: {line}')
         return block_data
 
-    # peer only for now
-    def _validate(self, field: str, value: str) -> str:
+    def _validate_peer_field(self, field: str, value: str) -> str:
         # TODO handle fields properly
         if field in {'PublicKey', 'PresharedKey'}:
-            value1 = value.encode('utf-8')
-            value2 = base64.b64encode(base64.b64decode(value1))
-            if value1 != value2:
-                raise Exception(f'Invalid base64 value: {value}')
+            self._validate_base64(value)
         elif field in {'AllowedIPs', 'Endpoint'}:
-            if re.search(r'[\r\n]', value):
-                raise Exception(f'Value cannot contain line breaks')
+            self._validate_linebreak(value)
         else:
             raise Exception(f'Unexpected field: {field}')
         return value
+
+    def _validate_interface_field(self, field: str, value: str) -> str:
+        if field == 'Address':
+            self._validate_linebreak(value)
+        else:
+            raise Exception(f'Unexpected field: {field}')
+        return value
+
+    def _validate_base64(self, value: str):
+        value1 = value.encode('utf-8')
+        value2 = base64.b64encode(base64.b64decode(value1))
+        if value1 != value2:
+            raise Exception(f'Invalid base64 value: {value}')
+
+    def _validate_linebreak(self, value: str):
+        if re.search(r'[\r\n]', value):
+            raise Exception(f'Value cannot contain line breaks')
 
 
 class WireguardLocalUserAuthentication:
@@ -191,7 +213,7 @@ class WireguardLocalUserAuthentication:
         self._wireguard_config = wireguard_config
 
     # TODO handler typing?
-    def authenticate(self, handler) -> Optional[Dict]:
+    def authenticate(self, handler) -> tuple[int, Optional[Dict]]:
         creds = handler.request.getsockopt(
             socket.SOL_SOCKET,
             socket.SO_PEERCRED,
@@ -200,19 +222,22 @@ class WireguardLocalUserAuthentication:
         _, uid, _ = struct.unpack('3i', creds)
         user = pwd.getpwuid(uid)
         wireguard_users_group = grp.getgrnam('wireguard_users')
-        if user.pw_name not in wireguard_users_group.gr_mem:
-            return None
+        if uid != 0 and user.pw_name not in wireguard_users_group.gr_mem:
+            return uid, None
         command = json.loads(handler.rfile.readline())
+        # root user override
+        if uid == 0:
+            return uid, command
         public_key = command['public_key']
         old_public_key = self._wireguard_users.get_public_key(uid)
         if old_public_key == public_key:
-            return command
+            return uid, command
         elif old_public_key is not None:
             self._wireguard_config.delete_peer(old_public_key)
             self._wireguard_config.save()
         # will fail when trying to reuse a public key
         self._wireguard_users.add_public_key(uid, public_key)
-        return command
+        return uid, command
 
 
 class WireguardPeerAuthentication:
@@ -261,12 +286,13 @@ class WireguardLocalUserRequestHandler(socketserver.StreamRequestHandler):
     server: WireguardLocalUserServer
 
     def handle(self):
-        command = self.server.authentication.authenticate(self)
+        uid, command = self.server.authentication.authenticate(self)
         if command is not None:
-            self._handle_command(command)
+            self._handle_command(command, uid)
 
-    def _handle_command(self, command: Dict[str, Any]):
-        result = self.server.command_handler.handle(command, 'local_user')
+    def _handle_command(self, command: Dict[str, Any], uid: int):
+        source = 'root_user' if uid == 0 else 'local_user'
+        result = self.server.command_handler.handle(command, source)
         self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
 
 
@@ -282,9 +308,11 @@ class WireguardCommandHandler:
             'data': None
         }
         try:
-            if command['command'] == 'pair' and source == 'local_user':
+            if command['command'] == 'pair' and source in ['local_user', 'root_user']:
                 result['data'] = self._handle_pair(command)
-            elif command['command'] == 'update_peer_fields' and source == 'local_user':
+            elif command['command'] == 'receive_pair' and source == 'root_user':
+                result['data'] = self._handle_receive_pair(command)
+            elif command['command'] == 'update_peer_fields' and source in ['local_user', 'root_user']:
                 result['data'] = self._handle_update_peer_fields(command)
             else:
                 raise Exception(f'Unexpected command: {command["command"]}')
@@ -296,7 +324,7 @@ class WireguardCommandHandler:
         return result
 
     # command handlers
-    def _handle_pair(self, command: Dict[str, Any]):
+    def _handle_pair(self, command: Dict[str, Any]) -> Dict[str, Any]:
         """
         Handle a pairing request by a client assuming that we are the server
         """
@@ -345,6 +373,19 @@ class WireguardCommandHandler:
             'interface': interface_conf,
             'peer': peer_conf,
         }
+
+    def _handle_receive_pair(self, command: Dict[str, Any]) -> Dict[str, Any]:
+        interface_conf = command['data']['interface']
+        peer_conf = command['data']['peer']
+
+        self._config.update_interface_fields(interface_conf['fields'])
+
+        peer_public_key = peer_conf['fields']['PublicKey']
+        self._config.add_peer(peer_public_key, peer_conf['fields'])
+
+        self._config.save()
+
+        return {}
 
     def _handle_update_peer_fields(self, command: Dict[str, Any]) -> Dict[str, str]:
         """
