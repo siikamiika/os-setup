@@ -63,6 +63,7 @@ pulseaudio
 pulseaudio-alsa
 pulseaudio-bluetooth
 pyright
+python-black
 python-evdev
 python-jedi
 python-pip
@@ -92,6 +93,7 @@ sudo
 sway
 swaybg
 swaylock
+tigervnc
 tk
 ttf-font-awesome
 ttf-sarasa-gothic
@@ -100,6 +102,8 @@ vim
 waybar
 wayvnc
 wf-recorder
+wireguard-tools
+wireshark-qt
 wl-clipboard
 wlroots
 wob
