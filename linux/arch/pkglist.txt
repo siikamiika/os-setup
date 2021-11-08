@@ -66,6 +66,8 @@ pyright
 python-evdev
 python-jedi
 python-pip
+python-pyasn1
+python-pycryptodome
 python-pykeepass
 python-pylint
 python-pynvim
