@@ -1,6 +1,7 @@
 - https://wiki.archlinux.org/title/WireGuard
 - https://gitlab.com/NickCao/RAIT
 - https://www.jordanwhited.com/posts/wireguard-endpoint-discovery-nat-traversal/
+    - https://github.com/malcolmseyd/natpunch-go
     - full-cone nat
         - wg show wg0 endpoints
         - if server uses port forwarding, filter out LAN endpoints
