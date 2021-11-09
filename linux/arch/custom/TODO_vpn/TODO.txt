@@ -64,5 +64,6 @@
                   clock) and starts sending PCs with that index.  Whenever A detects
                   that B has changed its index, it challenges B again.
         - ~~no additional encryption~~
+            - or just use TLS + HMAC?
 - dynamic port
 - https://en.wikipedia.org/wiki/OpenID
