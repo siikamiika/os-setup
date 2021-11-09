@@ -269,7 +269,7 @@ class WireguardLocalUserAuthentication:
         elif old_public_key is not None:
             self._wireguard_config.delete_peer(old_public_key)
             self._wireguard_config.save()
-        # will fail when trying to reuse a public key
+        # will fail when trying to reuse someone else's public key
         self._wireguard_users.add_public_key(uid, public_key)
         return user, command
 
