@@ -519,7 +519,11 @@ class WireguardCommandHandler:
     def _reload_wireguard_config(self):
         # TODO use syncconf if not setting interface address
         # subprocess.run("bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'", shell=True)
-        subprocess.run(['systemctl', 'restart', 'wg-quick@wg0'])
+        def _bg():
+            # avoid breaking unix sockets during communication
+            time.sleep(3)
+            subprocess.run(['systemctl', 'restart', 'wg-quick@wg0'])
+        threading.Thread(target=_bg).start()
 
 
 class WireguardPeerDaemon:
