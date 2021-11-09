@@ -528,7 +528,7 @@ class WireguardPeerDaemon:
 
     def start(self):
         # TODO
-        self._status_monitor.add_listener('endpoint_update', lambda x: print(x))
+        self._status_monitor.add_listener('endpoint_update', self._on_endpoint_update)
         self._status_monitor.start()
         self._local_user_server.serve_forever()
         # TODO TCP
@@ -553,6 +553,11 @@ class WireguardPeerDaemon:
             with open('/usr/local/etc/wireguard_peer_daemon.json') as f:
                 config.update(json.load(f))
         return config
+
+    def _on_endpoint_update(self, endpoint):
+        for peer in self._wireguard_config.iter_peers():
+            if endpoint['pubkey'] != peer['PublicKey']:
+                print(f'TODO Should inform {peer} about {endpoint}')
 
 
 def main():
