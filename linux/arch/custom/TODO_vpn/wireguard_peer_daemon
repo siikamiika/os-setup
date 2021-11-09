@@ -217,10 +217,7 @@ class WireguardConfig:
             raise Exception(f'Value cannot contain line breaks')
 
     def _gen_privkey(self) -> str:
-        key_proc = subprocess.run(['wg', 'genkey'], stdout=subprocess.PIPE)
-        if not key_proc.stdout:
-            raise Exception('Could not generate key')
-        return key_proc.stdout.decode('utf-8').rstrip('\n')
+        return subprocess.check_output(['wg', 'genkey']).decode('utf-8').rstrip('\n')
 
 
 # TODO attributes?
@@ -461,26 +458,14 @@ class WireguardCommandHandler:
         raise Exception('Address space exhausted')
 
     def _gen_psk(self) -> str:
-        psk_proc = subprocess.run(['wg', 'genpsk'], stdout=subprocess.PIPE)
-        if not psk_proc.stdout:
-            raise Exception('Could not generate PSK')
-        return psk_proc.stdout.decode('utf-8').rstrip('\n')
+        return subprocess.check_output(['wg', 'genpsk']).decode('utf-8').rstrip('\n')
 
     def _get_pubkey(self) -> str:
         interface = self._config.get_interface()
-        pubkey_proc = subprocess.Popen(
+        return subprocess.check_output(
             ['wg', 'pubkey'],
-            stdout=subprocess.PIPE,
-            stdin=subprocess.PIPE
-        )
-        if not pubkey_proc.stdin:
-            raise Exception('Could not generate public key')
-        private_key = interface['PrivateKey'] + '\n'
-        pubkey_proc.stdin.write(private_key.encode('utf-8'))
-        pubkey_proc.stdin.close()
-        if not pubkey_proc.stdout:
-            raise Exception('Could not generate public key')
-        return pubkey_proc.stdout.read().decode('utf-8').rstrip('\n')
+            input=interface['PrivateKey'].encode('utf-8')
+        ).decode('utf-8').rstrip('\n')
 
     def _enable_wireguard(self):
         subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
