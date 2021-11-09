@@ -223,6 +223,17 @@ class WireguardConfig:
         return key_proc.stdout.decode('utf-8').rstrip('\n')
 
 
+# TODO attributes?
+class AuthenticatedUser:
+    def __repr__(self):
+        return self.__class__.__name__
+# local users
+class LocalAuthorizedUser(AuthenticatedUser): pass
+class Root(LocalAuthorizedUser): pass
+class WireguardUser(LocalAuthorizedUser): pass
+# TODO network users
+
+
 class WireguardLocalUserAuthentication:
     """
     Authenticate a user based on their group membership and add
@@ -233,31 +244,34 @@ class WireguardLocalUserAuthentication:
         self._wireguard_config = wireguard_config
 
     # TODO handler typing?
-    def authenticate(self, handler) -> tuple[int, Optional[Dict]]:
+    def authenticate(self, handler) -> tuple[AuthenticatedUser, Optional[Dict]]:
         creds = handler.request.getsockopt(
             socket.SOL_SOCKET,
             socket.SO_PEERCRED,
             struct.calcsize('3i')
         )
+        user = AuthenticatedUser()
         _, uid, _ = struct.unpack('3i', creds)
-        user = pwd.getpwuid(uid)
+        pwd_user = pwd.getpwuid(uid)
         wireguard_users_group = grp.getgrnam('wireguard_users')
-        if uid != 0 and user.pw_name not in wireguard_users_group.gr_mem:
-            return uid, None
+        if uid != 0 and pwd_user.pw_name not in wireguard_users_group.gr_mem:
+            return user, None
         command = json.loads(handler.rfile.readline())
         # root user override
         if uid == 0:
-            return uid, command
+            user = Root()
+            return user, command
         public_key = command['public_key']
         old_public_key = self._wireguard_users.get_public_key(uid)
+        user = WireguardUser()
         if old_public_key == public_key:
-            return uid, command
+            return user, command
         elif old_public_key is not None:
             self._wireguard_config.delete_peer(old_public_key)
             self._wireguard_config.save()
         # will fail when trying to reuse a public key
         self._wireguard_users.add_public_key(uid, public_key)
-        return uid, command
+        return user, command
 
 
 class WireguardPeerAuthentication:
@@ -306,13 +320,12 @@ class WireguardLocalUserRequestHandler(socketserver.StreamRequestHandler):
     server: WireguardLocalUserServer
 
     def handle(self):
-        uid, command = self.server.authentication.authenticate(self)
+        user, command = self.server.authentication.authenticate(self)
         if command is not None:
-            self._handle_command(command, uid)
+            self._handle_command(command, user)
 
-    def _handle_command(self, command: Dict[str, Any], uid: int):
-        source = 'root_user' if uid == 0 else 'local_user'
-        result = self.server.command_handler.handle(command, source)
+    def _handle_command(self, command: Dict[str, Any], user: AuthenticatedUser):
+        result = self.server.command_handler.handle(command, user)
         self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
 
 
@@ -322,22 +335,22 @@ class WireguardCommandHandler:
         self._config = config
         self._meta_config = meta_config
 
-    def handle(self, command: Dict[str, Any], source: str):
+    def handle(self, command: Dict[str, Any], user: AuthenticatedUser):
         result: Dict[str, Any] = {
             'status': None,
             'data': None
         }
         try:
-            if command['command'] == 'pair' and source in ['local_user', 'root_user']:
+            if command['command'] == 'pair' and isinstance(user, LocalAuthorizedUser):
                 result['data'] = self._handle_pair(command)
-            elif command['command'] == 'receive_pair' and source == 'root_user':
+            elif command['command'] == 'receive_pair' and isinstance(user, Root):
                 result['data'] = self._handle_receive_pair(command)
-            elif command['command'] == 'get_public_key' and source == 'root_user':
+            elif command['command'] == 'get_public_key' and isinstance(user, Root):
                 result['data'] = self._handle_get_public_key(command)
-            elif command['command'] == 'update_peer_fields' and source in ['local_user', 'root_user']:
+            elif command['command'] == 'update_peer_fields' and isinstance(user, LocalAuthorizedUser):
                 result['data'] = self._handle_update_peer_fields(command)
             else:
-                raise Exception(f'Unexpected command: {command["command"]}')
+                raise Exception(f'Unexpected command: {command["command"]} as {user}')
             result['status'] = 'ok'
         except Exception as e:
             result['status'] = 'error'
