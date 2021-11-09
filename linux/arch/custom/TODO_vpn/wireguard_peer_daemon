@@ -522,7 +522,9 @@ class WireguardCommandHandler:
         def _bg():
             # avoid breaking unix sockets during communication
             time.sleep(3)
-            subprocess.run(['systemctl', 'restart', 'wg-quick@wg0'])
+            # subprocess.run(['systemctl', 'restart', 'wg-quick@wg0'])
+            subprocess.run(['wg-quick', 'down', 'wg0'])
+            subprocess.run(['wg-quick', 'up', 'wg0'])
         threading.Thread(target=_bg).start()
 
 
