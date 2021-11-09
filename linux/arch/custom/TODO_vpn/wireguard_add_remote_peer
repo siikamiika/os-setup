@@ -7,8 +7,8 @@ sshrun()
     ssh "$SSH_HOST" -- "$@"
 }
 
-echo '{"command": "get_public_key"}' \
-    | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock \
+pubkey=$(echo '{"command": "get_public_key"}' | sudo socat - UNIX-CONNECT:/run/wireguard_peer.sock)
+echo "$pubkey" \
     | jq -c '{command: "pair", public_key: .data.PublicKey, data: {fields: {}}}' \
     | sshrun socat - UNIX-CONNECT:/run/wireguard_peer.sock \
     | jq -c '{command: "receive_pair", data: .data}' \
