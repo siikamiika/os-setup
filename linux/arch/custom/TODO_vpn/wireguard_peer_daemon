@@ -250,7 +250,10 @@ class WireguardStatusMonitor:
             listener(data)
 
     def _get_endpoint_changes(self):
-        output = subprocess.check_output(['wg', 'show', 'wg0', 'endpoints'])
+        try:
+            output = subprocess.check_output(['wg', 'show', 'wg0', 'endpoints'])
+        except subprocess.CalledProcessError:
+            return
         prev_pubkeys = set(self._endpoint_cache)
         for raw_endpoint in output.decode('utf-8').splitlines():
             pubkey, addr = raw_endpoint.split('\t')
