@@ -31,6 +31,7 @@
         - also: browser
     - HMAC(PSK, content, sha256)
         - content: {pubkey: <pubkey>, data: <data>, timestamp: 1234.56789}
+        - don't rely on dict order when hashing
         - replay attacks
             - 5 sec window, disallow duplicates within that
             - alternative: include previous MAC in content
