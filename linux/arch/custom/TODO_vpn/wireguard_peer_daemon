@@ -517,7 +517,7 @@ class WireguardCommandHandler:
         self._reload_wireguard_config()
 
     def _reload_wireguard_config(self):
-        subprocess.run('wg syncconf wg0 <(wg-quick strip wg0)', shell=True)
+        subprocess.run("bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'", shell=True)
 
 
 class WireguardPeerDaemon:
