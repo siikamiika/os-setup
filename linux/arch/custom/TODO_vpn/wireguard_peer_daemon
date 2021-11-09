@@ -14,6 +14,8 @@ import struct
 import socket
 import traceback
 import base64
+import threading
+import time
 from typing import Optional, Dict, Any, Iterator
 
 
@@ -218,6 +220,46 @@ class WireguardConfig:
 
     def _gen_privkey(self) -> str:
         return subprocess.check_output(['wg', 'genkey']).decode('utf-8').rstrip('\n')
+
+
+class WireguardStatusMonitor:
+
+    _POLL_RATE = 10
+
+    def __init__(self):
+        self._thread = None
+        self._listeners = {'endpoint_update': []}
+        self._endpoint_cache = {}
+
+    def start(self):
+        if self._thread is not None:
+            raise Exception('Already started')
+        def _background():
+            while True:
+                for endpoint in self._get_endpoint_changes():
+                    self._on_event('endpoint_update', endpoint)
+                time.sleep(WireguardStatusMonitor._POLL_RATE)
+        self._thread = threading.Thread(target=_background)
+        self._thread.start()
+
+    def add_listener(self, event_name, listener):
+        self._listeners[event_name].append(listener)
+
+    def _on_event(self, event_name, data):
+        for listener in self._listeners[event_name]:
+            listener(data)
+
+    def _get_endpoint_changes(self):
+        output = subprocess.check_output(['wg', 'show', 'wg0', 'endpoints'])
+        prev_pubkeys = set(self._endpoint_cache)
+        for raw_endpoint in output.decode('utf-8').splitlines():
+            pubkey, addr = raw_endpoint.split('\t')
+            if pubkey not in self._endpoint_cache or self._endpoint_cache[pubkey] != addr:
+                self._endpoint_cache[pubkey] = addr
+                yield {'pubkey': pubkey, 'addr': addr}
+            prev_pubkeys.discard(pubkey)
+        for pubkey in prev_pubkeys:
+            del self._endpoint_cache[pubkey]
 
 
 # TODO attributes?
@@ -482,8 +524,12 @@ class WireguardPeerDaemon:
         self._config = self._load_config()
         self._wireguard_command_handler = WireguardCommandHandler(self._wireguard_config, self._config)
         self._local_user_server = self._get_local_user_server()
+        self._status_monitor = WireguardStatusMonitor()
 
     def start(self):
+        # TODO
+        self._status_monitor.add_listener('endpoint_update', lambda x: print(x))
+        self._status_monitor.start()
         self._local_user_server.serve_forever()
         # TODO TCP
 
