@@ -421,7 +421,12 @@ class WireguardCommandHandler:
             'AllowedIPs': str(ipaddress.IPv4Network(new_peer_address)),
         })
         self._config.save()
-        self._reload_wireguard_config()
+        def _bg():
+            # avoid breaking unix sockets during communication
+            time.sleep(3)
+            subprocess.run("bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'", shell=True)
+        threading.Thread(target=_bg).start()
+
 
         this_interface = self._config.get_interface()
         ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
@@ -462,7 +467,14 @@ class WireguardCommandHandler:
         self._config.add_peer(peer_public_key, peer_conf['fields'])
 
         self._config.save()
-        self._enable_wireguard()
+        def _bg():
+            # avoid breaking unix sockets during communication
+            time.sleep(2)
+            subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
+            time.sleep(1)
+            subprocess.run(['wg-quick', 'down', 'wg0'])
+            subprocess.run(['wg-quick', 'up', 'wg0'])
+        threading.Thread(target=_bg).start()
 
         return {}
 
@@ -511,21 +523,6 @@ class WireguardCommandHandler:
             ['wg', 'pubkey'],
             input=interface['PrivateKey'].encode('utf-8')
         ).decode('utf-8').rstrip('\n')
-
-    def _enable_wireguard(self):
-        subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
-        self._reload_wireguard_config()
-
-    def _reload_wireguard_config(self):
-        # TODO use syncconf if not setting interface address
-        # subprocess.run("bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'", shell=True)
-        def _bg():
-            # avoid breaking unix sockets during communication
-            time.sleep(3)
-            # subprocess.run(['systemctl', 'restart', 'wg-quick@wg0'])
-            subprocess.run(['wg-quick', 'down', 'wg0'])
-            subprocess.run(['wg-quick', 'up', 'wg0'])
-        threading.Thread(target=_bg).start()
 
 
 class WireguardPeerDaemon:
