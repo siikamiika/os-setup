@@ -413,6 +413,8 @@ class WireguardLocalUserRequestHandler(socketserver.StreamRequestHandler):
 
 class WireguardNetworkServer(socketserver.TCPServer):
 
+    allow_reuse_address = True
+
     def __init__(self, *args, **kwargs):
         command_handler: CommandHandler = kwargs.pop('command_handler')
         wireguard: Wireguard = kwargs.pop('wireguard')
@@ -624,9 +626,8 @@ class WireguardPeerDaemon:
 
     def start(self):
         self._wireguard.add_listener('endpoint_update', self._on_endpoint_update)
-        self._local_user_server.serve_forever()
-        threading.Thread(target=self._local_user_server.serve_forever).run()
-        threading.Thread(target=self._network_server.serve_forever).run()
+        threading.Thread(target=self._local_user_server.serve_forever).start()
+        threading.Thread(target=self._network_server.serve_forever).start()
 
     def _get_local_user_server(self):
         socket_path = '/run/wireguard_peer.sock'
@@ -670,7 +671,7 @@ class WireguardPeerDaemon:
                 str(ipaddress.IPv4Interface(peer['AllowedIPs']).ip),
                 51820 # TODO dynamic port
             ))
-            sockfile = sock.makefile()
+            sockfile = sock.makefile('rw')
             sockfile.write(json.dumps({
                 # TODO apply authentication and encryption
                 'command': 'notify_peer_updated',
