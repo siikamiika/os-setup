@@ -9,7 +9,6 @@ import grp
 import ipaddress
 import subprocess
 import json
-import sqlite3
 import struct
 import socket
 import traceback
@@ -279,14 +278,6 @@ class WireguardUsers:
             [uid, public_key, public_key]
         )
 
-    def _get_db_connection(self) -> sqlite3.Connection:
-        path = WireguardUsers._DB_PATH
-        if not os.path.isfile(path):
-            # not directly readable or writable for peers
-            fd = os.open(path, os.O_CREAT, mode=0o600)
-            os.close(fd)
-        return sqlite3.connect(path)
-
     def _ensure_tables(self):
         self._execute('''
             CREATE TABLE IF NOT EXISTS wireguard_users (
@@ -307,7 +298,13 @@ class WireguardUsers:
 
     def _start(self):
         def _bg():
-            con = self._get_db_connection()
+            import sqlite3
+            path = WireguardUsers._DB_PATH
+            if not os.path.isfile(path):
+                # not directly readable or writable for peers
+                fd = os.open(path, os.O_CREAT, mode=0o600)
+                os.close(fd)
+            con = sqlite3.connect(path)
             cur = con.cursor()
             while True:
                 try:
