@@ -16,6 +16,7 @@ import traceback
 import base64
 import threading
 import time
+import queue
 from typing import Optional, Dict, Any, Iterator
 
 
@@ -257,8 +258,8 @@ class WireguardUsers:
     _DB_PATH = '/var/local/wireguard_users.db'
 
     def __init__(self):
-        self._con = self._get_db_connection()
-        self._cur = self._con.cursor()
+        self._queue = queue.Queue()
+        self._start()
         self._ensure_tables()
 
     def get_public_key(self, uid: int) -> Optional[str]:
@@ -297,9 +298,26 @@ class WireguardUsers:
         self._execute('CREATE INDEX IF NOT EXISTS public_key_idx ON wireguard_users (public_key)')
 
     def _execute(self, sql, params=[]):
-        res = self._cur.execute(sql, params)
-        self._con.commit()
-        return res
+        result_queue = queue.Queue()
+        self._queue.put((
+            (sql, params),
+            result_queue
+        ))
+        return result_queue.get(timeout=5)
+
+    def _start(self):
+        def _bg():
+            con = self._get_db_connection()
+            cur = con.cursor()
+            while True:
+                try:
+                    (sql, params), result_queue = self._queue.get()
+                    res = cur.execute(sql, params)
+                    con.commit()
+                    result_queue.put(res)
+                except Exception as e:
+                    traceback.print_exc()
+        threading.Thread(target=_bg).start()
 
 
 # TODO attributes?
