@@ -19,56 +19,6 @@ import time
 from typing import Optional, Dict, Any, Iterator
 
 
-class WireguardUsers:
-
-    _DB_PATH = '/var/local/wireguard_users.db'
-
-    def __init__(self):
-        self._con = self._get_db_connection()
-        self._cur = self._con.cursor()
-        self._ensure_tables()
-
-    def get_public_key(self, uid: int) -> Optional[str]:
-        for row in self._execute(
-            'SELECT public_key FROM wireguard_users WHERE uid = ?',
-            [uid]
-        ):
-            return row[0]
-        return None
-
-    def add_public_key(self, uid: int, public_key: str):
-        # Allow the same uid to update their public key but abort when
-        # another uid tries to reuse one (see CREATE TABLE)
-        self._execute(
-            'INSERT INTO wireguard_users (uid, public_key) VALUES (?, ?) '
-            'ON CONFLICT(uid) DO UPDATE SET public_key = ?',
-            [uid, public_key, public_key]
-        )
-
-    def _get_db_connection(self) -> sqlite3.Connection:
-        path = WireguardUsers._DB_PATH
-        if not os.path.isfile(path):
-            # not directly readable or writable for peers
-            fd = os.open(path, os.O_CREAT, mode=0o600)
-            os.close(fd)
-        return sqlite3.connect(path)
-
-    def _ensure_tables(self):
-        self._execute('''
-            CREATE TABLE IF NOT EXISTS wireguard_users (
-                uid INTEGER UNIQUE,
-                public_key TEXT UNIQUE ON CONFLICT ABORT
-            )
-        ''')
-        self._execute('CREATE INDEX IF NOT EXISTS uid_idx ON wireguard_users (uid)')
-        self._execute('CREATE INDEX IF NOT EXISTS public_key_idx ON wireguard_users (public_key)')
-
-    def _execute(self, sql, params=[]):
-        res = self._cur.execute(sql, params)
-        self._con.commit()
-        return res
-
-
 class WireguardConfig:
     # TODO write only, use sqlite DB for state
     _FIELD_RE = re.compile(r'^(?P<key>[a-zA-Z]+)\s*=\s*(?P<value>.+)$')
@@ -265,6 +215,90 @@ class WireguardStatusMonitor:
             del self._endpoint_cache[pubkey]
 
 
+class Wireguard:
+    def __init__(self):
+        self._config = WireguardConfig('/etc/wireguard/wg0.conf')
+        self._status_monitor = WireguardStatusMonitor()
+        self._status_monitor.start()
+
+    def get_interface(self) -> Dict[str, str]:
+        return self._config.get_interface()
+
+    def update_interface_fields(self, fields: Dict[str, Optional[str]]):
+        self._config.update_interface_fields(fields)
+
+    def get_peer(self, public_key: str) -> Dict[str, str]:
+        return self._config.get_peer(public_key)
+
+    def iter_peers(self) -> Iterator[Dict[str, Optional[str]]]:
+        yield from self._config.iter_peers()
+
+    def update_peer_fields(self, public_key: str, fields: Dict[str, Optional[str]]):
+        self._config.update_peer_fields(public_key, fields)
+
+    def add_peer(self, public_key: str, fields: Dict[str, Optional[str]]):
+        self._config.add_peer(public_key, fields)
+
+    def delete_peer(self, public_key: str):
+        self._config.delete_peer(public_key)
+
+    def save_config(self):
+        self._config.save()
+
+    def add_listener(self, event_name, listener):
+        self._status_monitor.add_listener(event_name, listener)
+
+
+class WireguardUsers:
+
+    _DB_PATH = '/var/local/wireguard_users.db'
+
+    def __init__(self):
+        self._con = self._get_db_connection()
+        self._cur = self._con.cursor()
+        self._ensure_tables()
+
+    def get_public_key(self, uid: int) -> Optional[str]:
+        for row in self._execute(
+            'SELECT public_key FROM wireguard_users WHERE uid = ?',
+            [uid]
+        ):
+            return row[0]
+        return None
+
+    def add_public_key(self, uid: int, public_key: str):
+        # Allow the same uid to update their public key but abort when
+        # another uid tries to reuse one (see CREATE TABLE)
+        self._execute(
+            'INSERT INTO wireguard_users (uid, public_key) VALUES (?, ?) '
+            'ON CONFLICT(uid) DO UPDATE SET public_key = ?',
+            [uid, public_key, public_key]
+        )
+
+    def _get_db_connection(self) -> sqlite3.Connection:
+        path = WireguardUsers._DB_PATH
+        if not os.path.isfile(path):
+            # not directly readable or writable for peers
+            fd = os.open(path, os.O_CREAT, mode=0o600)
+            os.close(fd)
+        return sqlite3.connect(path)
+
+    def _ensure_tables(self):
+        self._execute('''
+            CREATE TABLE IF NOT EXISTS wireguard_users (
+                uid INTEGER UNIQUE,
+                public_key TEXT UNIQUE ON CONFLICT ABORT
+            )
+        ''')
+        self._execute('CREATE INDEX IF NOT EXISTS uid_idx ON wireguard_users (uid)')
+        self._execute('CREATE INDEX IF NOT EXISTS public_key_idx ON wireguard_users (public_key)')
+
+    def _execute(self, sql, params=[]):
+        res = self._cur.execute(sql, params)
+        self._con.commit()
+        return res
+
+
 # TODO attributes?
 class AuthenticatedUser:
     def __repr__(self):
@@ -281,9 +315,9 @@ class WireguardLocalUserAuthentication:
     Authenticate a user based on their group membership and add
     public key to the database
     """
-    def __init__(self, wireguard_users: WireguardUsers, wireguard_config: WireguardConfig):
-        self._wireguard_users = wireguard_users
-        self._wireguard_config = wireguard_config
+    def __init__(self, wireguard: Wireguard):
+        self._wireguard = wireguard
+        self._wireguard_users = WireguardUsers()
 
     # TODO handler typing?
     def authenticate(self, handler) -> tuple[AuthenticatedUser, Optional[Dict]]:
@@ -309,8 +343,8 @@ class WireguardLocalUserAuthentication:
         if old_public_key == public_key:
             return user, command
         elif old_public_key is not None:
-            self._wireguard_config.delete_peer(old_public_key)
-            self._wireguard_config.save()
+            self._wireguard.delete_peer(old_public_key)
+            self._wireguard.save_config()
         # will fail when trying to reuse someone else's public key
         self._wireguard_users.add_public_key(uid, public_key)
         return user, command
@@ -333,11 +367,11 @@ class WireguardPeerAuthentication:
 class WireguardLocalUserServer(socketserver.UnixStreamServer):
 
     def __init__(self, *args, **kwargs):
-        command_handler = kwargs.pop('command_handler')
-        authentication = kwargs.pop('authentication')
+        command_handler: CommandHandler = kwargs.pop('command_handler')
+        wireguard: Wireguard = kwargs.pop('wireguard')
         super().__init__(*args, **kwargs)
-        self.command_handler: WireguardCommandHandler = command_handler
-        self.authentication: WireguardLocalUserAuthentication = authentication
+        self.command_handler = command_handler
+        self.authentication = WireguardLocalUserAuthentication(wireguard)
 
     def server_bind(self):
         fd = self.socket.fileno()
@@ -371,11 +405,11 @@ class WireguardLocalUserRequestHandler(socketserver.StreamRequestHandler):
         self.wfile.write(json.dumps(result).encode('utf-8') + b'\n')
 
 
-class WireguardCommandHandler:
+class CommandHandler:
 
-    def __init__(self, config: WireguardConfig, meta_config: Dict[str, Any]):
+    def __init__(self, wireguard: Wireguard, config: Dict[str, Any]):
+        self._wireguard = wireguard
         self._config = config
-        self._meta_config = meta_config
 
     def handle(self, command: Dict[str, Any], user: AuthenticatedUser):
         result: Dict[str, Any] = {
@@ -408,19 +442,19 @@ class WireguardCommandHandler:
         public_key = command['public_key']
         fields = command['data']['fields']
 
-        self._config.delete_peer(public_key)
+        self._wireguard.delete_peer(public_key)
 
         new_peer_psk = self._gen_psk()
         new_peer_address = self._get_available_address()
 
         # add new peer to own config
-        self._config.add_peer(public_key, {
+        self._wireguard.add_peer(public_key, {
             **fields,
             'PublicKey': public_key,
             'PresharedKey': new_peer_psk,
             'AllowedIPs': str(ipaddress.IPv4Network(new_peer_address)),
         })
-        self._config.save()
+        self._wireguard.save_config()
         def _bg():
             # avoid breaking unix sockets during communication
             time.sleep(3)
@@ -428,7 +462,7 @@ class WireguardCommandHandler:
         threading.Thread(target=_bg).start()
 
 
-        this_interface = self._config.get_interface()
+        this_interface = self._wireguard.get_interface()
         ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
 
         interface_conf = {
@@ -447,7 +481,7 @@ class WireguardCommandHandler:
                 'PublicKey': self._get_pubkey(),
                 'PresharedKey': new_peer_psk,
                 'AllowedIPs': str(ipaddress.IPv4Network(ip_interface.ip)),
-                'Endpoint': f'{self._meta_config["endpoint_host"]}:{this_interface["ListenPort"]}',
+                'Endpoint': f'{self._config["endpoint_host"]}:{this_interface["ListenPort"]}',
             }
         }
 
@@ -461,12 +495,12 @@ class WireguardCommandHandler:
         interface_conf = command['data']['interface']
         peer_conf = command['data']['peer']
 
-        self._config.update_interface_fields(interface_conf['fields'])
+        self._wireguard.update_interface_fields(interface_conf['fields'])
 
         peer_public_key = peer_conf['fields']['PublicKey']
-        self._config.add_peer(peer_public_key, peer_conf['fields'])
+        self._wireguard.add_peer(peer_public_key, peer_conf['fields'])
 
-        self._config.save()
+        self._wireguard.save_config()
         def _bg():
             # avoid breaking unix sockets during communication
             time.sleep(2)
@@ -492,17 +526,17 @@ class WireguardCommandHandler:
         for field in ['PublicKey', 'PresharedKey', 'AllowedIPs']:
             if field in fields:
                 raise Exception(f'Cannot update field {field}')
-        self._config.update_peer_fields(public_key, fields)
-        self._config.save()
-        return self._config.get_peer(public_key)
+        self._wireguard.update_peer_fields(public_key, fields)
+        self._wireguard.save_config()
+        return self._wireguard.get_peer(public_key)
 
     # misc
     def _get_available_address(self) -> ipaddress.IPv4Address:
-        interface = self._config.get_interface()
+        interface = self._wireguard.get_interface()
         ip_interface = ipaddress.IPv4Interface(interface['Address'])
         network = ip_interface.network
         reserved = {ip_interface.ip, network.network_address}
-        for peer in self._config.iter_peers():
+        for peer in self._wireguard.iter_peers():
             if 'AllowedIPs' not in peer or peer['AllowedIPs'] is None:
                 raise Exception(f'Peer {peer["PublicKey"]} is missing AllowedIPs')
             for peer_network in peer['AllowedIPs'].split(', '):
@@ -518,7 +552,7 @@ class WireguardCommandHandler:
         return subprocess.check_output(['wg', 'genpsk']).decode('utf-8').rstrip('\n')
 
     def _get_pubkey(self) -> str:
-        interface = self._config.get_interface()
+        interface = self._wireguard.get_interface()
         return subprocess.check_output(
             ['wg', 'pubkey'],
             input=interface['PrivateKey'].encode('utf-8')
@@ -527,17 +561,13 @@ class WireguardCommandHandler:
 
 class WireguardPeerDaemon:
     def __init__(self):
-        self._wireguard_users = WireguardUsers()
-        self._wireguard_config = WireguardConfig('/etc/wireguard/wg0.conf')
+        self._wireguard = Wireguard()
         self._config = self._load_config()
-        self._wireguard_command_handler = WireguardCommandHandler(self._wireguard_config, self._config)
+        self._command_handler = CommandHandler(self._wireguard, self._config)
         self._local_user_server = self._get_local_user_server()
-        self._status_monitor = WireguardStatusMonitor()
 
     def start(self):
-        # TODO
-        self._status_monitor.add_listener('endpoint_update', self._on_endpoint_update)
-        self._status_monitor.start()
+        self._wireguard.add_listener('endpoint_update', self._on_endpoint_update)
         self._local_user_server.serve_forever()
         # TODO TCP
 
@@ -548,11 +578,8 @@ class WireguardPeerDaemon:
         return WireguardLocalUserServer(
             socket_path,
             WireguardLocalUserRequestHandler,
-            command_handler=self._wireguard_command_handler,
-            authentication=WireguardLocalUserAuthentication(
-                self._wireguard_users,
-                self._wireguard_config
-            )
+            command_handler=self._command_handler,
+            wireguard=self._wireguard
         )
 
     def _load_config(self):
@@ -563,7 +590,8 @@ class WireguardPeerDaemon:
         return config
 
     def _on_endpoint_update(self, endpoint):
-        for peer in self._wireguard_config.iter_peers():
+        # TODO
+        for peer in self._wireguard.iter_peers():
             if endpoint['pubkey'] != peer['PublicKey']:
                 print(f'TODO Should inform {peer} about {endpoint}')
 
