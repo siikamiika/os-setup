@@ -700,6 +700,7 @@ class WireguardPeerDaemon:
                     }
                 }
             }) + '\n')
+            sockfile.flush()
             # TODO check response
             print(sockfile.readline())
             sockfile.close()
