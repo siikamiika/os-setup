@@ -639,13 +639,12 @@ class WireguardPeerDaemon:
         self._wireguard = Wireguard()
         self._config = self._load_config()
         self._command_handler = CommandHandler(self._wireguard, self._config)
-        self._local_user_server = self._get_local_user_server()
-        self._network_server = self._get_network_server()
+        self._local_user_server = None
+        self._network_server = None
 
     def start(self):
         self._wireguard.add_listener('endpoint_update', self._on_endpoint_update)
-        threading.Thread(target=self._local_user_server.serve_forever).start()
-        threading.Thread(target=self._network_server.serve_forever).start()
+        self._start_servers()
 
     def _get_local_user_server(self):
         socket_path = '/run/wireguard_peer.sock'
@@ -669,6 +668,27 @@ class WireguardPeerDaemon:
             command_handler=self._command_handler,
             wireguard=self._wireguard
         )
+
+    def _start_servers(self):
+        while True:
+            if self._local_user_server is None:
+                try:
+                    self._local_user_server = self._get_local_user_server()
+                    threading.Thread(target=self._local_user_server.serve_forever).start()
+                except:
+                    self._local_user_server = None
+                    traceback.print_exc()
+            elif self._network_server is None:
+                try:
+                    self._network_server = self._get_network_server()
+                    threading.Thread(target=self._network_server.serve_forever).start()
+                except:
+                    self._network_server = None
+                    traceback.print_exc()
+            else:
+                break
+            time.sleep(5)
+
 
     def _load_config(self):
         config = {'endpoint_host': '0.0.0.0'}
