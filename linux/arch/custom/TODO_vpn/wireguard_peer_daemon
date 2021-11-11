@@ -254,6 +254,26 @@ class Wireguard:
     def add_listener(self, event_name, listener):
         self._status_monitor.add_listener(event_name, listener)
 
+    def set_peer_endpoint(self, public_key, endpoint):
+        subprocess.run(['wg', 'set', 'wg0', 'peer', public_key, 'endpoint', endpoint])
+
+    def enable(self):
+        def _bg():
+            # avoid breaking unix sockets during communication
+            time.sleep(2)
+            subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
+            time.sleep(1)
+            subprocess.run(['wg-quick', 'down', 'wg0'])
+            subprocess.run(['wg-quick', 'up', 'wg0'])
+        threading.Thread(target=_bg).start()
+
+    def reload(self):
+        def _bg():
+            # avoid breaking unix sockets during communication
+            time.sleep(3)
+            subprocess.run("bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'", shell=True)
+        threading.Thread(target=_bg).start()
+
 
 class WireguardUsers:
 
@@ -509,12 +529,7 @@ class CommandHandler:
             'AllowedIPs': str(ipaddress.IPv4Network(new_peer_address)),
         })
         self._wireguard.save_config()
-        def _bg():
-            # avoid breaking unix sockets during communication
-            time.sleep(3)
-            subprocess.run("bash -c 'wg syncconf wg0 <(wg-quick strip wg0)'", shell=True)
-        threading.Thread(target=_bg).start()
-
+        self._wireguard.reload()
 
         this_interface = self._wireguard.get_interface()
         ip_interface = ipaddress.IPv4Interface(this_interface['Address'])
@@ -555,14 +570,7 @@ class CommandHandler:
         self._wireguard.add_peer(peer_public_key, peer_conf['fields'])
 
         self._wireguard.save_config()
-        def _bg():
-            # avoid breaking unix sockets during communication
-            time.sleep(2)
-            subprocess.run(['systemctl', 'enable', '--now', 'wg-quick@wg0'])
-            time.sleep(1)
-            subprocess.run(['wg-quick', 'down', 'wg0'])
-            subprocess.run(['wg-quick', 'up', 'wg0'])
-        threading.Thread(target=_bg).start()
+        self._wireguard.enable()
 
         return {}
 
@@ -601,8 +609,7 @@ class CommandHandler:
         peer = self._wireguard.get_peer(public_key)
         if 'Endpoint' not in peer:
             # pubkey should be validated by now
-            subprocess.run(['wg', 'set', 'wg0', 'peer',
-                            public_key, 'endpoint', fields['Endpoint']])
+            self._wireguard.set_peer_endpoint(public_key, fields['Endpoint'])
 
         return {}
 
@@ -645,6 +652,7 @@ class WireguardPeerDaemon:
 
     def start(self):
         self._wireguard.add_listener('endpoint_update', self._on_endpoint_update)
+        self._wireguard.enable()
         self._start_servers()
 
     def _get_local_user_server(self):
