@@ -208,6 +208,8 @@ class WireguardStatusMonitor:
         prev_pubkeys = set(self._endpoint_cache)
         for raw_endpoint in output.decode('utf-8').splitlines():
             pubkey, addr = raw_endpoint.split('\t')
+            if not addr or addr == '(none)':
+                continue
             if pubkey not in self._endpoint_cache or self._endpoint_cache[pubkey] != addr:
                 self._endpoint_cache[pubkey] = addr
                 yield {'pubkey': pubkey, 'addr': addr}
