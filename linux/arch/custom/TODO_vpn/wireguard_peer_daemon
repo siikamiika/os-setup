@@ -707,10 +707,18 @@ class WireguardPeerDaemon:
                 continue
             # TODO check subnet or use some other way to indicate peer primary ip
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((
-                str(ipaddress.IPv4Interface(peer['AllowedIPs']).ip),
-                51820 # TODO dynamic port
-            ))
+            sock.settimeout(5)
+            host = str(ipaddress.IPv4Interface(peer['AllowedIPs']).ip)
+            addr = (host, 51820)
+            try:
+                # TODO dynamic port
+                sock.connect(addr)
+            except OSError:
+                print(f'Could not connect to {addr}')
+                continue
+            except socket.timeout:
+                print(f'Connection to {addr} timed out')
+                continue
             sockfile = sock.makefile('rw')
             sockfile.write(json.dumps({
                 # TODO apply authentication and encryption
