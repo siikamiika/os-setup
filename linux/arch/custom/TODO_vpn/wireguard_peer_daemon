@@ -592,7 +592,6 @@ class CommandHandler:
         public_key = fields['PublicKey']
         if not self._wireguard.has_peer(public_key):
             self._wireguard.add_peer(public_key, {
-                **fields,
                 'PublicKey': public_key,
                 # TODO 'PresharedKey': fields['PresharedKey'],
                 'AllowedIPs': fields['AllowedIPs'],
@@ -725,7 +724,9 @@ class WireguardPeerDaemon:
                 'command': 'notify_peer_updated',
                 'data': {
                     'fields': {
-                        **updated_peer,
+                        'PublicKey': updated_peer['PublicKey'],
+                        # TODO 'PresharedKey': updated_peer['PresharedKey'],
+                        'AllowedIPs': updated_peer['AllowedIPs'],
                         'Endpoint': endpoint['addr'],
                     }
                 }
