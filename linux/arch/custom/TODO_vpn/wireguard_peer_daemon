@@ -179,7 +179,10 @@ class WireguardStatusMonitor:
 
     def __init__(self):
         self._thread = None
-        self._listeners = {'endpoint_update': []}
+        self._listeners = {
+            'endpoint_update': [],
+            'enabled': [],
+        }
         self._endpoint_cache = {}
 
     def start(self):
@@ -192,6 +195,9 @@ class WireguardStatusMonitor:
                 time.sleep(WireguardStatusMonitor._POLL_RATE)
         self._thread = threading.Thread(target=_background)
         self._thread.start()
+
+    def trigger(self, event_name, data):
+        self._on_event(event_name, data)
 
     def add_listener(self, event_name, listener):
         self._listeners[event_name].append(listener)
@@ -265,6 +271,7 @@ class Wireguard:
             time.sleep(1)
             subprocess.run(['wg-quick', 'down', 'wg0'])
             subprocess.run(['wg-quick', 'up', 'wg0'])
+            self._status_monitor.trigger('enabled', None)
         threading.Thread(target=_bg).start()
 
     def reload(self):
@@ -652,6 +659,7 @@ class WireguardPeerDaemon:
 
     def start(self):
         self._wireguard.add_listener('endpoint_update', self._on_endpoint_update)
+        self._wireguard.add_listener('enabled', self._on_enabled)
         self._wireguard.enable()
         self._start_servers()
 
@@ -679,6 +687,8 @@ class WireguardPeerDaemon:
         )
 
     def _start_servers(self):
+        self._local_user_server = None
+        self._network_server = None
         while True:
             if self._local_user_server is None:
                 try:
@@ -744,6 +754,10 @@ class WireguardPeerDaemon:
             print(sockfile.readline())
             sockfile.close()
             sock.close()
+
+    def _on_enabled(self, _):
+        # TODO avoid starting multiple
+        self._start_servers()
 
 
 def main():
