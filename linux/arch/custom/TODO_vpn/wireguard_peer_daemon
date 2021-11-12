@@ -687,8 +687,10 @@ class WireguardPeerDaemon:
         )
 
     def _start_servers(self):
-        self._local_user_server = None
-        self._network_server = None
+        # release ip/port in case it has changed
+        if self._network_server:
+            self._network_server.shutdown()
+            self._network_server = None
         while True:
             if self._local_user_server is None:
                 try:
