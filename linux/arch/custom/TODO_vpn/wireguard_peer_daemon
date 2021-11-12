@@ -621,6 +621,7 @@ class CommandHandler:
                 'AllowedIPs': fields['AllowedIPs'],
             })
             self._wireguard.save_config()
+            self._wireguard.reload()
         # never write dynamic endpoint to config, set it separately if not static
         peer = self._wireguard.get_peer(public_key)
         if 'Endpoint' not in peer:
