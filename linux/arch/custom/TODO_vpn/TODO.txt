@@ -67,4 +67,4 @@
             - or just use TLS + HMAC?
 - dynamic port
 - https://en.wikipedia.org/wiki/OpenID
-- ipv6 endpoint
+- clean up peers when AllowedIPs overlaps and pubkey doesn't match
