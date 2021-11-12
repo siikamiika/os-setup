@@ -68,3 +68,4 @@
 - dynamic port
 - https://en.wikipedia.org/wiki/OpenID
 - flood known peers on connect
+- ipv6 endpoint
