@@ -263,6 +263,15 @@ class Wireguard:
     def set_peer_endpoint(self, public_key, endpoint):
         subprocess.run(['wg', 'set', 'wg0', 'peer', public_key, 'endpoint', endpoint])
 
+    def iter_endpoints(self):
+        output = subprocess.check_output(['wg', 'show', 'wg0', 'endpoints'])
+        for raw_endpoint in output.decode('utf-8').splitlines():
+            pubkey, addr = raw_endpoint.split('\t')
+            if not addr or addr == '(none)':
+                continue
+            endpoint_peer = self.get_peer(pubkey)
+            yield {**endpoint_peer, 'Endpoint': addr}
+
     def enable(self):
         def _bg():
             # avoid breaking unix sockets during communication
@@ -720,46 +729,54 @@ class WireguardPeerDaemon:
 
     def _on_endpoint_update(self, endpoint):
         # TODO move this somewhere else?
-        updated_peer = self._wireguard.get_peer(endpoint['pubkey'])
+        updated_peer = {
+            **self._wireguard.get_peer(endpoint['pubkey']),
+            'Endpoint': endpoint['addr'],
+        }
         for peer in self._wireguard.iter_peers():
-            if endpoint['pubkey'] == peer['PublicKey']:
-                continue
-            # TODO check subnet or use some other way to indicate peer primary ip
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5)
-            host = str(ipaddress.IPv4Interface(peer['AllowedIPs']).ip)
-            addr = (host, 51820)
-            try:
-                # TODO dynamic port
-                sock.connect(addr)
-            except OSError:
-                print(f'Could not connect to {addr}')
-                continue
-            except socket.timeout:
-                print(f'Connection to {addr} timed out')
-                continue
-            sockfile = sock.makefile('rw')
-            sockfile.write(json.dumps({
-                # TODO apply authentication and encryption
-                'command': 'notify_peer_updated',
-                'data': {
-                    'fields': {
-                        'PublicKey': updated_peer['PublicKey'],
-                        # TODO 'PresharedKey': updated_peer['PresharedKey'],
-                        'AllowedIPs': updated_peer['AllowedIPs'],
-                        'Endpoint': endpoint['addr'],
-                    }
-                }
-            }) + '\n')
-            sockfile.flush()
-            # TODO check response
-            print(sockfile.readline())
-            sockfile.close()
-            sock.close()
+            self._notify_peer_updated(updated_peer, peer)
+        for peer in self._wireguard.iter_endpoints():
+            self._notify_peer_updated(peer, updated_peer)
 
     def _on_enabled(self, _):
         # TODO avoid starting multiple
         self._start_servers()
+
+    def _notify_peer_updated(self, updated_peer, receiving_peer):
+        if updated_peer['PublicKey'] == receiving_peer['PublicKey']:
+            return
+        # TODO check subnet or use some other way to indicate peer primary ip
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        host = str(ipaddress.IPv4Interface(receiving_peer['AllowedIPs']).ip)
+        addr = (host, 51820)
+        try:
+            # TODO dynamic port
+            sock.connect(addr)
+        except OSError:
+            print(f'Could not connect to {addr}')
+            return
+        except socket.timeout:
+            print(f'Connection to {addr} timed out')
+            return
+        sockfile = sock.makefile('rw')
+        sockfile.write(json.dumps({
+            # TODO apply authentication and encryption
+            'command': 'notify_peer_updated',
+            'data': {
+                'fields': {
+                    'PublicKey': updated_peer['PublicKey'],
+                    # TODO 'PresharedKey': updated_peer['PresharedKey'],
+                    'AllowedIPs': updated_peer['AllowedIPs'],
+                    'Endpoint': updated_peer['Endpoint'],
+                }
+            }
+        }) + '\n')
+        sockfile.flush()
+        # TODO check response
+        print(sockfile.readline())
+        sockfile.close()
+        sock.close()
 
 
 def main():
