@@ -69,3 +69,4 @@
 - https://en.wikipedia.org/wiki/OpenID
 - clean up peers when AllowedIPs overlaps and pubkey doesn't match
     - only trust peers with static endpoint (depends on authentication)
+- logging
