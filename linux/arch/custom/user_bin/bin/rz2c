@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Usage: pdgj | rz-ghidra-nvim-current-line 0xdeadbeef
+# Usage: pdgj | rz2c 0xdeadbeef
 
 import json
 import subprocess
