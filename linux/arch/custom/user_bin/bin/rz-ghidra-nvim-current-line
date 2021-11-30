@@ -1,24 +1,32 @@
 #!/usr/bin/env python3
 
-# Usage: dr rip | tee /tmp/dr_rip > /dev/null; pdgj | tee /tmp/pdgj.json > /dev/null; ! rz-ghidra-nvim-current-line
+# Usage: pdgj | rz-ghidra-nvim-current-line 0xdeadbeef
 
 import json
 import subprocess
+import sys
 
-with open('/tmp/pdgj.json') as f:
-    pdgj = json.load(f)
+pdgj = json.load(sys.stdin)
 
-with open('/tmp/dr_rip') as f:
-    rip = int(f.read(), 0)
+offset = int(sys.argv[1], 0)
 
-line_num = 0
+pos = 0
 code = pdgj['code']
+annotation_distance = None
+chosen_annotation = None
 for annotation in pdgj['annotations']:
     if 'offset' not in annotation:
         continue
-    if rip == annotation['offset']:
-        line_num = code[:annotation['start']].count('\n') + 1
+    if offset == annotation['offset']:
+        chosen_annotation = annotation
         break
+    dist = abs(offset - annotation['offset'])
+    if annotation_distance is None or annotation_distance > dist:
+        chosen_annotation = annotation
+        annotation_distance = dist
+
+if chosen_annotation:
+    pos = chosen_annotation['start']
 
 with open('/tmp/pdgj.c', 'w') as f:
     f.write(code)
@@ -27,5 +35,5 @@ subprocess.run([
     'alacritty',
     '-e',
     'fish',
-    '-c' f'nvim +{line_num} /tmp/pdgj.c'
+    '-c' f'nvim +{pos}go /tmp/pdgj.c'
 ])
