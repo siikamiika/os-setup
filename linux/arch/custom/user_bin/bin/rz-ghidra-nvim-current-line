@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+# Usage: dr rip | tee /tmp/dr_rip > /dev/null; pdgj | tee /tmp/pdgj.json > /dev/null; ! rz-ghidra-nvim-current-line
+
+import json
+import subprocess
+
+with open('/tmp/pdgj.json') as f:
+    pdgj = json.load(f)
+
+with open('/tmp/dr_rip') as f:
+    rip = int(f.read(), 0)
+
+line_num = 0
+code = pdgj['code']
+for annotation in pdgj['annotations']:
+    if 'offset' not in annotation:
+        continue
+    if rip == annotation['offset']:
+        line_num = code[:annotation['start']].count('\n') + 1
+        break
+
+with open('/tmp/pdgj.c', 'w') as f:
+    f.write(code)
+
+subprocess.run([
+    'alacritty',
+    '-e',
+    'fish',
+    '-c' f'nvim +{line_num} /tmp/pdgj.c'
+])
