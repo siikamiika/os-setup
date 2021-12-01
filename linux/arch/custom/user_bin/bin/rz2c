@@ -31,7 +31,7 @@ if chosen_annotation:
 with open('/tmp/pdgj.c', 'w') as f:
     f.write(code)
 
-subprocess.run([
+subprocess.Popen([
     'alacritty',
     '-e',
     'fish',
