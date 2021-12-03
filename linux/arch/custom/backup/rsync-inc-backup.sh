@@ -50,6 +50,7 @@ function incremental_backup()
         --delete \
         --itemize-changes \
         --exclude=/.cache \
+        --exclude=*.qcow2 \
         "$LOCAL_PATH/" \
         "$REMOTE_HOST:$REMOTE_PATH/backup.0"
     if [ ! $? -eq 0 ]; then
