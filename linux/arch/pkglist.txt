@@ -55,7 +55,7 @@ p7zip
 pacman-contrib
 patch
 pavucontrol
-pcmanfm
+pcmanfm-qt
 picom
 pkgconf
 pkgfile

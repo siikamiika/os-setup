@@ -14,10 +14,6 @@
 < set update_title false
 ---
 > set update_title true
-189c189
-< set update_tmux_title true
----
-> set update_tmux_title false
 199c199
 < set tilde_in_titlebar false
 ---
@@ -30,7 +26,7 @@
 > copymap K <C-E>
 475a477,478
 > map <A-o> shell nvim -S Session.vim
-> map <A-p> shell pcmanfm
+> map <A-p> shell pcmanfm-qt
 531a535,537
 > map <C-f> fzf_select
 > map <A-f> console fzf_grep%space
