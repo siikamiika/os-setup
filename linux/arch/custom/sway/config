@@ -255,7 +255,7 @@ for_window [class="Steam"] move to workspace 4
 ########################################
 
 # font
-font pango:Sarasa Term J 10
+font pango:Sarasa Fixed J 10
 
 # colors
 # class                 border  backgr. text    indicator child_border

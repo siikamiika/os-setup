@@ -1,16 +1,20 @@
-32c32
-<     geometry = "300x5-30+20"
+27c27
+<     width = 300
 ---
->     geometry = "500-10+10"
-109c109
+>     width = 500
+30c30
+<     height = 300
+---
+>     height = 500
+114c114
 <     font = Monospace 8
 ---
->     font = Sarasa Term J 10
-195c195
+>     font = Sarasa Fixed J 10
+196c196
 <     max_icon_size = 32
 ---
 >     max_icon_size = 0
-286,288c286,288
+277,279c277,279
 <     mouse_left_click = close_current
 <     mouse_middle_click = do_action, close_current
 <     mouse_right_click = close_all

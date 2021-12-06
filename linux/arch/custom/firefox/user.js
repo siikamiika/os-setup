@@ -27,10 +27,10 @@ user_pref("intl.locale.requested", "ja");
 // fonts
 // ---------------------
 user_pref("font.language.group", "ja");
-user_pref("font.name.monospace.ja", "Sarasa Term J");
-user_pref("font.name.monospace.zh-CN", "Noto Sans Mono CJK SC");
-user_pref("font.name.monospace.zh-HK", "Noto Sans Mono CJK TC");
-user_pref("font.name.monospace.zh-TW", "Noto Sans Mono CJK TC");
+user_pref("font.name.monospace.ja", "Sarasa Fixed J");
+user_pref("font.name.monospace.zh-CN", "Sarasa Fixed SC");
+user_pref("font.name.monospace.zh-HK", "Sarasa Fixed TC");
+user_pref("font.name.monospace.zh-TW", "Sarasa Fixed TC");
 user_pref("font.name.sans-serif.ja", "Noto Sans CJK JP");
 user_pref("font.name.sans-serif.zh-CN", "Noto Sans CJK SC");
 user_pref("font.name.sans-serif.zh-HK", "Noto Sans CJK TC");
