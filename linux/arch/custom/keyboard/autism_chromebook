@@ -118,14 +118,14 @@ xkb_symbols "basic" {
         symbols[Group1] = [ Escape, Caps_Lock, Eisu_toggle, NoSymbol ],
         actions[Group1] = [ NoAction(), LockMods(modifiers=Lock), NoAction(), NoAction() ]
     };
+    // Chromebook specials
+    key <LWIN> {
+        symbols[Group1] = [ Escape, Caps_Lock, Eisu_toggle, NoSymbol ],
+        actions[Group1] = [ NoAction(), LockMods(modifiers=Lock), NoAction(), NoAction() ]
+    };
+    key <LSGT> { [ Super_L, Super_L, Super_L, Super_L ] };
 
     include "level3(ralt_switch)"
-    modifier_map Mod5 { <HENK>, <RALT> };
-
-    // TODO does not actually work, see `setxkbmap -print` --> inet(evdev)
-    key <HKTG> { [ BackSpace ] };
-    key <HENK> { [ ISO_Level3_Shift ] };
-
     modifier_map Mod2 { <MUHE> };
     replace key <MDSW> {
         type[Group1] = "ONE_LEVEL",
