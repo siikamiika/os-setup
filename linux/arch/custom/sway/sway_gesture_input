@@ -291,7 +291,8 @@ class SwayGestureInput:
                      BTN_SIDE, BTN_EXTRA, BTN_FORWARD,
                      KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTMETA, KEY_LEFTALT,
                      KEY_PAGEUP, KEY_PAGEDOWN, KEY_TAB,
-                     KEY_W, KEY_T, KEY_R, KEY_F, KEY_Q, KEY_N,
+                     KEY_W, KEY_T, KEY_R, KEY_F, KEY_Q, KEY_N, KEY_J, KEY_E,
+                     KEY_F9,
                      KEY_BACK, KEY_FORWARD, KEY_LEFT, KEY_RIGHT],
             EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
         }, name='sgi-virt-input')
@@ -321,11 +322,15 @@ class SwayGestureInput:
                 if event['direction'] == 'left':
                     if self._sway.focused_app in ['Alacritty', 'imv']:
                         self._virtual_input.key(KEY_LEFT, wait_time=0.01)
+                    elif self._sway.focused_app and self._sway.focused_app.startswith('steam_app_'):
+                        self._virtual_input.key(KEY_J)
                     else:
                         self._virtual_input.key(KEY_BACK)
                 elif event['direction'] == 'right':
                     if self._sway.focused_app in ['Alacritty', 'imv']:
                         self._virtual_input.key(KEY_RIGHT, wait_time=0.01)
+                    elif self._sway.focused_app and self._sway.focused_app.startswith('steam_app_'):
+                        self._virtual_input.key(KEY_E)
                     else:
                         self._virtual_input.key(KEY_FORWARD)
                 # reopen/close tab
@@ -337,6 +342,8 @@ class SwayGestureInput:
                 elif event['direction'] == 'down':
                     if self._sway.focused_app in ['mpv', 'imv']:
                         self._virtual_input.key(KEY_Q)
+                    elif self._sway.focused_app and self._sway.focused_app.startswith('steam_app_'):
+                        self._virtual_input.key(KEY_F9)
                     else:
                         self._virtual_input.key(KEY_W, [KEY_LEFTCTRL])
             else:
