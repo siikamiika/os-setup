@@ -308,11 +308,12 @@ class SwayGestureInput:
 
     def _handle_gesture(self, event):
         if event['fingers'] == 2:
+            pass
             # precise wheel to discrete event for container tab cycling
-            if event['direction'] == 'right':
-                self._virtual_input.rel(REL_HWHEEL, 1)
-            elif event['direction'] == 'left':
-                self._virtual_input.rel(REL_HWHEEL, -1)
+            # if event['direction'] == 'right':
+            #     self._virtual_input.rel(REL_HWHEEL, 1)
+            # elif event['direction'] == 'left':
+            #     self._virtual_input.rel(REL_HWHEEL, -1)
         elif event['fingers'] == 3:
             # overload multi-event/single-event gestures
             if event['single']:
@@ -386,7 +387,7 @@ class SwayGestureInput:
 
     def _handle_status(self, event):
         # ignore regular scroll
-        if event['fingers'] == 2 and event['axis'] == 'y':
+        if event['fingers'] == 2:
             return
         pos = int(max(min(((event['pos'] + 1) / 2) * 100, 100), 0))
         self._wob.write(pos)
