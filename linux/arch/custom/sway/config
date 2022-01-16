@@ -101,8 +101,8 @@ bindsym $mod+Mod1+r exec swaymsg output "$(swaymsg -t get_outputs | jq -r '.[] |
 bindsym $mod+Shift+Mod1+r exec swaymsg output "$(swaymsg -t get_outputs | jq -r '.[] | select(.focused?) | .name')" transform 90 anticlockwise
 
 # scratchpad
-# bindsym $mod+g move scratchpad
-# bindsym $mod+d scratchpad show
+bindsym $mod+Shift+grave move scratchpad
+bindsym $mod+grave scratchpad show
 #bindcode 132 scratchpad show
 
 # reload the configuration file
@@ -207,6 +207,7 @@ for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resiz
 for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0
 for_window [app_id="firefoxdeveloperedition" title="ピクチャーインピクチャー"] floating enable, border none, opacity 0.8, resize set 20 ppt 15 ppt, move position 80 ppt 0
 for_window [app_id="firefoxdeveloperedition" title="^\[player\]"] floating enable, border none, opacity 0.6, resize set 25 ppt 20 ppt, move position 98 ppt -18 ppt
+for_window [app_id="firefoxdeveloperedition" title="^\[tl\]"] floating enable, border none, opacity 0.6
 # this does not work in sway, use workaround
 # for_window [floating] resize set 640 480
 floating_maximum_size 1600 x 900
