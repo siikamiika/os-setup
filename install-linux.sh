@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # TODO distro independent
+# TODO https://github.com/archlinux/archinstall
 
 install_yay ()
 {
