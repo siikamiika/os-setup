@@ -7,7 +7,7 @@ function on_sub_text(_, sub_text)
         local f = io.open(CLIPBOARD_PATH, 'w')
         f:write(sub_text .. '\n')
         f:close()
-        local shell_command = string.format('xclip -selection clipboard %s', CLIPBOARD_PATH)
+        local shell_command = string.format('wl-copy < %s', CLIPBOARD_PATH)
         os.execute(shell_command)
     end
 end
