@@ -43,7 +43,7 @@ set_default_browser()
     mkdir -p "$dest_dir"
     cp "$src" "$dest"
     sed \
-        -e '/^Exec=\/usr\/lib\/firefox-developer-edition\/firefox %u$/c Exec=\/usr\/lib\/firefox-developer-edition\/firefox --new-window %u' \
+        -E 's/^(Exec=\/usr\/lib\/firefox-developer-edition\/firefox)( --class="firefoxdeveloperedition")? %u$/\1\2 --new-window %u/' \
         -i "$dest"
     xdg-settings set default-web-browser "$dest_entry"
 }
