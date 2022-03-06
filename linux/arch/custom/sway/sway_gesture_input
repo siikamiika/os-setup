@@ -223,7 +223,7 @@ class VirtualInput:
 
     def _create_uinput(self, capabilities, name):
         dev = libevdev.Device()
-        dev.name = 'sgi-virt-input'
+        dev.name = name
         for codes in capabilities.values():
             for code in codes:
                 dev.enable(libevdev.evbit(code))
