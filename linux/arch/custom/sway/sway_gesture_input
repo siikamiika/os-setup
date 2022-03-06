@@ -85,6 +85,22 @@ class LibinputTouchpadEventSource:
             device = self._libinput.add_device(path)
             device.config.tap.set_button_map(libinput.TapButtonMap.LRM)
             device.config.click.set_method(libinput.ClickMethod.CLICKFINGER)
+            return
+            # experimental code for grabbing a libinput device
+            # without losing libinput access to it
+            import fcntl
+            import os
+            evdev_path = '/dev/input/' + device.sysname
+            for fd in [int(fd) for fd in os.listdir('/proc/self/fd')]:
+                if os.path.realpath(f'/proc/self/fd/{fd}') == evdev_path:
+                    print(fd, evdev_path, device.name)
+                    # https://github.com/whizse/exclusive-keyboard-access/blob/master/exclusive-keyboard.py
+                    # IOW(ord('E'), 0x90, ctypes.c_int)
+                    EVIOCGRAB = 1074021776
+                    try:
+                        fcntl.ioctl(fd, EVIOCGRAB, 1)
+                    except OSError:
+                        pass
 
     # TODO remove device
 
