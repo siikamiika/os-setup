@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import subprocess
-import re
 import json
 import time
 import threading
 import libevdev
+import libinput
+import pyudev
 
 # https://stackoverflow.com/a/923034
 def set_proc_name(newname):
@@ -15,95 +16,77 @@ def set_proc_name(newname):
     buff.value = newname
     libc.prctl(15, byref(buff), 0, 0, 0)
 
+class LibinputTouchpadEventSource:
+    def __init__(self):
+        self._libinput = libinput.LibInput(context_type=libinput.ContextType.PATH)
+        self._lock = threading.Lock()
+        self._start()
 
-class LibinputDebugEventReader:
-
-    def get_events(self):
-        proc = subprocess.Popen(
-            ['unbuffer', 'libinput', 'debug-events'],
-            stdout=subprocess.PIPE,
-            bufsize=1,
-            universal_newlines=True
-        )
-        for line in proc.stdout:
-            parsed_event = self.parse_event(line)
-            if parsed_event:
-                yield parsed_event
-
-    def parse_event(self, line):
-        re_float = '[+-]?\d*\.\d*'
-        m = re.match(
-            rf'''
-            \s*
-            event\d+
-            \s+
-            (?P<type>
-                GESTURE_SWIPE_UPDATE|GESTURE_SWIPE_END|POINTER_SCROLL_FINGER
-            )
-            \s+
-            \+\d*\.\d*s
-            \s+
-            (?:
-                (?P<fingers>
-                    \d+
-                )
-                \s*
-                (?:
-                    $
-                    |
-                    cancelled
-                    |
-                    (?P<swipe_x>
-                        {re_float}
-                    )
-                    \/\s?
-                    (?P<swipe_y>
-                        {re_float}
-                    )
-                )
-                |
-                vert\s+
-                (?P<scroll_y>
-                    {re_float}
-                )
-                \/.*?
-                horiz\s+
-                (?P<scroll_x>
-                    {re_float}
-                )
-            )
-            ''',
-            line,
-            re.VERBOSE
-        )
-        if m:
-            event_type = m.group('type')
-            if event_type == 'GESTURE_SWIPE_UPDATE':
-                return {
-                    'type': 'update',
-                    'fingers': int(m.group('fingers')),
-                    'swipe_x': float(m.group('swipe_x')),
-                    'swipe_y': float(m.group('swipe_y')),
-                }
-            elif event_type == 'GESTURE_SWIPE_END':
-                return {
-                    'type': 'end',
-                    'fingers': int(m.group('fingers')),
-                }
-            elif event_type == 'POINTER_SCROLL_FINGER':
-                scroll_x, scroll_y = map(float, (m.group('scroll_x'), m.group('scroll_y')))
-                if scroll_x == scroll_y == 0.0:
-                    return {
-                        'type': 'end',
-                        'fingers': 2,
+    def events(self):
+        pointer_axes = [
+            libinput.PointerAxis.SCROLL_HORIZONTAL,
+            libinput.PointerAxis.SCROLL_VERTICAL,
+        ]
+        for event in self._libinput.events:
+            if isinstance(event, libinput.PointerEvent):
+                if event.type == libinput.EventType.POINTER_AXIS:
+                    scroll = tuple(event.get_axis_value(a) if event.has_axis(a) else 0.0 for a in pointer_axes)
+                    if scroll[0] == scroll[1] == 0.0:
+                        yield {
+                            'type': 'end',
+                            'fingers': 2,
+                        }
+                    else:
+                        yield {
+                            'type': 'update',
+                            'fingers': 2,
+                            'swipe_x': scroll[0],
+                            'swipe_y': scroll[1],
+                        }
+            elif isinstance(event, libinput.GestureEvent):
+                if event.type == libinput.EventType.GESTURE_SWIPE_UPDATE:
+                    yield {
+                        'type': 'update',
+                        'fingers': event.finger_count,
+                        'swipe_x': event.delta[0],
+                        'swipe_y': event.delta[1],
                     }
-                return {
-                    'type': 'update',
-                    'fingers': 2,
-                    'swipe_x': scroll_x,
-                    'swipe_y': scroll_y,
-                }
+                elif event.type == libinput.EventType.GESTURE_SWIPE_END:
+                    yield {
+                        'type': 'end',
+                        'fingers': event.finger_count,
+                    }
 
+    def _start(self):
+        def _bg():
+            context = pyudev.Context()
+            # existing
+            for device in context.list_devices(subsystem='input'):
+                if self._is_touchpad_device(device):
+                    self._add_device(device.get('DEVNAME'))
+            # dynamic
+            monitor = pyudev.Monitor.from_netlink(context)
+            monitor.filter_by(subsystem='input')
+            for device in iter(monitor.poll, None):
+                if self._is_touchpad_device(device):
+                    if device.get('ACTION') == 'add':
+                        self._add_device(device.get('DEVNAME'))
+        threading.Thread(target=_bg).start()
+
+
+    def _is_touchpad_device(self, device):
+        return (
+            device.get('ID_INPUT_TOUCHPAD') == '1'
+            and device.get('DEVNAME', '').startswith('/dev/input/event')
+        )
+
+    def _add_device(self, path):
+        with self._lock:
+            device = self._libinput.add_device(path)
+            device.config.tap.set_button_map(libinput.TapButtonMap.LRM)
+            device.config.click.set_method(libinput.ClickMethod.CLICKFINGER)
+
+    # TODO remove device
 
 class GestureEventSource:
 
@@ -119,10 +102,10 @@ class GestureEventSource:
             'threshold': GestureEventSource.EVENT_THRESHOLD,
             'events_triggered':  0,
         }
-        self._event_reader = LibinputDebugEventReader()
+        self._event_source = LibinputTouchpadEventSource()
 
     def listen(self):
-        for event in self._event_reader.get_events():
+        for event in self._event_source.events():
             # TODO check if fingers is the same
             if event['type'] == 'update':
                 if self._state['started'] is None:
