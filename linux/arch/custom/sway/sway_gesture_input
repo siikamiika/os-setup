@@ -5,9 +5,7 @@ import re
 import json
 import time
 import threading
-import evdev
-from evdev.ecodes import *
-
+import libevdev
 
 # https://stackoverflow.com/a/923034
 def set_proc_name(newname):
@@ -238,32 +236,50 @@ class Sway:
 
 class VirtualInput:
     def __init__(self, capabilities, name):
-        self._uinput = evdev.UInput(capabilities, name=name)
+        self._uinput = self._create_uinput(capabilities, name)
+
+    def _create_uinput(self, capabilities, name):
+        dev = libevdev.Device()
+        dev.name = 'sgi-virt-input'
+        for codes in capabilities.values():
+            for code in codes:
+                dev.enable(libevdev.evbit(code))
+
+        return dev.create_uinput_device()
 
     def key(self, key, modifiers=[], wait_time=None):
         for modifier in modifiers:
-            self._uinput.write(EV_KEY, modifier, 1)
+            self._uinput.send_events([
+                libevdev.InputEvent(libevdev.evbit(modifier), 1),
+                libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+            ])
             if wait_time:
-                self._uinput.syn()
                 time.sleep(wait_time)
-        self._uinput.write(EV_KEY, key, 1)
+        self._uinput.send_events([
+            libevdev.InputEvent(libevdev.evbit(key), 1),
+            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+        ])
         if wait_time:
-            self._uinput.syn()
             time.sleep(wait_time)
-        self._uinput.write(EV_KEY, key, 0)
+        self._uinput.send_events([
+            libevdev.InputEvent(libevdev.evbit(key), 0),
+            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+        ])
         if wait_time:
-            self._uinput.syn()
             time.sleep(wait_time)
         for modifier in modifiers:
-            self._uinput.write(EV_KEY, modifier, 0)
+            self._uinput.send_events([
+                libevdev.InputEvent(libevdev.evbit(modifier), 0),
+                libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+            ])
             if wait_time:
-                self._uinput.syn()
                 time.sleep(wait_time)
-        self._uinput.syn()
 
     def rel(self, code, val):
-        self._uinput.write(EV_REL, code, val)
-        self._uinput.syn()
+        self._uinput.send_events([
+            libevdev.InputEvent(libevdev.evbit(code), val),
+            libevdev.InputEvent(libevdev.EV_SYN.SYN_REPORT, 0),
+        ])
 
 
 class Wob:
@@ -287,14 +303,14 @@ class SwayGestureInput:
         set_proc_name(b'sgi_hack')
 
         self._virtual_input = VirtualInput({
-            EV_KEY: [BTN_LEFT, BTN_RIGHT, BTN_MIDDLE,
-                     BTN_SIDE, BTN_EXTRA, BTN_FORWARD,
-                     KEY_LEFTCTRL, KEY_LEFTSHIFT, KEY_LEFTMETA, KEY_LEFTALT,
-                     KEY_PAGEUP, KEY_PAGEDOWN, KEY_TAB,
-                     KEY_W, KEY_T, KEY_R, KEY_F, KEY_Q, KEY_N, KEY_J, KEY_E,
-                     KEY_F9,
-                     KEY_BACK, KEY_FORWARD, KEY_LEFT, KEY_RIGHT],
-            EV_REL: [REL_X, REL_Y, REL_WHEEL, REL_HWHEEL],
+            'EV_KEY': ['BTN_LEFT', 'BTN_RIGHT', 'BTN_MIDDLE',
+                     'BTN_SIDE', 'BTN_EXTRA', 'BTN_FORWARD',
+                     'KEY_LEFTCTRL', 'KEY_LEFTSHIFT', 'KEY_LEFTMETA', 'KEY_LEFTALT',
+                     'KEY_PAGEUP', 'KEY_PAGEDOWN', 'KEY_TAB',
+                     'KEY_W', 'KEY_T', 'KEY_R', 'KEY_F', 'KEY_Q', 'KEY_N', 'KEY_J', 'KEY_E',
+                     'KEY_F9',
+                     'KEY_BACK', 'KEY_FORWARD', 'KEY_LEFT', 'KEY_RIGHT'],
+            'EV_REL': ['REL_X', 'REL_Y', 'REL_WHEEL', 'REL_HWHEEL'],
         }, name='sgi-virt-input')
         self._sway = Sway()
         self._ges = GestureEventSource()
@@ -321,53 +337,53 @@ class SwayGestureInput:
                 # browser history
                 if event['direction'] == 'left':
                     if self._sway.focused_app in ['Alacritty', 'imv']:
-                        self._virtual_input.key(KEY_LEFT, wait_time=0.01)
+                        self._virtual_input.key('KEY_LEFT', wait_time=0.01)
                     elif self._sway.focused_app and self._sway.focused_app.startswith('steam_app_'):
-                        self._virtual_input.key(KEY_J)
+                        self._virtual_input.key('KEY_J')
                     else:
-                        self._virtual_input.key(KEY_BACK)
+                        self._virtual_input.key('KEY_BACK')
                 elif event['direction'] == 'right':
                     if self._sway.focused_app in ['Alacritty', 'imv']:
-                        self._virtual_input.key(KEY_RIGHT, wait_time=0.01)
+                        self._virtual_input.key('KEY_RIGHT', wait_time=0.01)
                     elif self._sway.focused_app and self._sway.focused_app.startswith('steam_app_'):
-                        self._virtual_input.key(KEY_E)
+                        self._virtual_input.key('KEY_E')
                     else:
-                        self._virtual_input.key(KEY_FORWARD)
+                        self._virtual_input.key('KEY_FORWARD')
                 # reopen/close tab
                 elif event['direction'] == 'up':
                     if self._sway.focused_app == 'Alacritty':
-                        self._virtual_input.key(KEY_T, [KEY_LEFTALT, KEY_LEFTSHIFT])
+                        self._virtual_input.key('KEY_T', ['KEY_LEFTALT', 'KEY_LEFTSHIFT'])
                     else:
-                        self._virtual_input.key(KEY_T, [KEY_LEFTCTRL, KEY_LEFTSHIFT])
+                        self._virtual_input.key('KEY_T', ['KEY_LEFTCTRL', 'KEY_LEFTSHIFT'])
                 elif event['direction'] == 'down':
                     if self._sway.focused_app in ['mpv', 'imv']:
-                        self._virtual_input.key(KEY_Q)
+                        self._virtual_input.key('KEY_Q')
                     elif self._sway.focused_app and self._sway.focused_app.startswith('steam_app_'):
-                        self._virtual_input.key(KEY_F9)
+                        self._virtual_input.key('KEY_F9')
                     else:
-                        self._virtual_input.key(KEY_W, [KEY_LEFTCTRL])
+                        self._virtual_input.key('KEY_W', ['KEY_LEFTCTRL'])
             else:
                 # cycle tabs
                 if event['direction'] == 'left':
                     if self._sway.focused_app == 'Alacritty':
-                        self._virtual_input.key(KEY_TAB, [KEY_LEFTSHIFT])
+                        self._virtual_input.key('KEY_TAB', ['KEY_LEFTSHIFT'])
                     elif self._sway.focused_app == 'imv':
-                        self._virtual_input.key(KEY_LEFT, wait_time=0.01)
+                        self._virtual_input.key('KEY_LEFT', wait_time=0.01)
                     else:
-                        self._virtual_input.key(KEY_PAGEUP, [KEY_LEFTCTRL])
+                        self._virtual_input.key('KEY_PAGEUP', ['KEY_LEFTCTRL'])
                 elif event['direction'] == 'right':
                     if self._sway.focused_app == 'Alacritty':
-                        self._virtual_input.key(KEY_TAB)
+                        self._virtual_input.key('KEY_TAB')
                     elif self._sway.focused_app == 'imv':
-                        self._virtual_input.key(KEY_RIGHT, wait_time=0.01)
+                        self._virtual_input.key('KEY_RIGHT', wait_time=0.01)
                     else:
-                        self._virtual_input.key(KEY_PAGEDOWN, [KEY_LEFTCTRL])
+                        self._virtual_input.key('KEY_PAGEDOWN', ['KEY_LEFTCTRL'])
                 # toggle full screen
                 elif event['direction'] == 'up':
-                    self._virtual_input.key(KEY_F, [KEY_LEFTMETA])
+                    self._virtual_input.key('KEY_F', ['KEY_LEFTMETA'])
                 # reload
                 elif event['direction'] == 'down':
-                    self._virtual_input.key(KEY_R, [KEY_LEFTCTRL])
+                    self._virtual_input.key('KEY_R', ['KEY_LEFTCTRL'])
         elif event['fingers'] == 4:
             if event['single']:
                 if event['direction'] == 'left':
@@ -377,11 +393,11 @@ class SwayGestureInput:
                 elif event['direction'] == 'up':
                     if self._sway.focused_app == 'firefoxdeveloperedition':
                         # reopen window
-                        self._virtual_input.key(KEY_N, [KEY_LEFTCTRL, KEY_LEFTSHIFT])
+                        self._virtual_input.key('KEY_N', ['KEY_LEFTCTRL', 'KEY_LEFTSHIFT'])
                 elif event['direction'] == 'down':
                     if self._sway.focused_app == 'firefoxdeveloperedition':
                         # close window
-                        self._virtual_input.key(KEY_W, [KEY_LEFTCTRL, KEY_LEFTSHIFT])
+                        self._virtual_input.key('KEY_W', ['KEY_LEFTCTRL', 'KEY_LEFTSHIFT'])
             else:
                 if event['direction'] == 'left':
                     self._sway.change_focus('left')
