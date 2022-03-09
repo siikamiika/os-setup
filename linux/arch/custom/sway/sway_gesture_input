@@ -284,7 +284,14 @@ class VirtualInput:
 class Wob:
     def __init__(self):
         self._process = subprocess.Popen(
-            ['wob', '-a', 'bottom', '-t', '500'],
+            [
+                'wob',
+                '-a', 'bottom',
+                '-t', '500',
+                '--border-color', '#ffffff44',
+                '--bar-color', '#ffffff44',
+                '--background-color', '#00000044',
+            ],
             stdin=subprocess.PIPE
         )
 
