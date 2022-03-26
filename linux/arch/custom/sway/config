@@ -76,6 +76,11 @@ bindsym $mod+7 workspace 7, focus floating
 bindsym $mod+8 workspace 8, focus floating
 bindsym $mod+9 workspace 9, focus floating
 bindsym $mod+0 workspace 10, focus floating
+# ...in a direction
+bindsym $mod+Control+Mod1+h workspace prev_on_output, focus floating
+bindsym $mod+Control+Mod1+l workspace next_on_output, focus floating
+bindsym $mod+Control+Mod1+Left workspace prev_on_output, focus floating
+bindsym $mod+Control+Mod1+Right workspace next_on_output, focus floating
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace 1
