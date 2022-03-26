@@ -222,16 +222,6 @@ class Sway:
                 except (KeyError, TypeError):
                     yield 'xwayland'
 
-    def change_focus(self, direction):
-        if direction in ['left', 'right', 'up', 'down']:
-            subprocess.call(['swaymsg', 'focus', direction])
-
-    def change_workspace(self, direction):
-        if direction == 'left':
-            subprocess.call(['swaymsg', 'workspace', 'prev_on_output'])
-        elif direction == 'right':
-            subprocess.call(['swaymsg', 'workspace', 'next_on_output'])
-
 
 class VirtualInput:
     def __init__(self, capabilities, name):
@@ -313,7 +303,8 @@ class SwayGestureInput:
                      'BTN_SIDE', 'BTN_EXTRA', 'BTN_FORWARD',
                      'KEY_LEFTCTRL', 'KEY_LEFTSHIFT', 'KEY_LEFTMETA', 'KEY_LEFTALT',
                      'KEY_PAGEUP', 'KEY_PAGEDOWN', 'KEY_TAB',
-                     'KEY_W', 'KEY_T', 'KEY_R', 'KEY_F', 'KEY_Q', 'KEY_N', 'KEY_J', 'KEY_E',
+                     'KEY_H', 'KEY_J', 'KEY_K', 'KEY_L',
+                     'KEY_W', 'KEY_T', 'KEY_R', 'KEY_F', 'KEY_Q', 'KEY_N', 'KEY_E',
                      'KEY_F9',
                      'KEY_BACK', 'KEY_FORWARD', 'KEY_LEFT', 'KEY_RIGHT'],
             'EV_REL': ['REL_X', 'REL_Y', 'REL_WHEEL', 'REL_HWHEEL'],
@@ -393,9 +384,11 @@ class SwayGestureInput:
         elif event['fingers'] == 4:
             if event['single']:
                 if event['direction'] == 'left':
-                    self._sway.change_workspace('left')
+                    # change to workspace on the left
+                    self._virtual_input.key('KEY_H', ['KEY_LEFTMETA', 'KEY_LEFTCTRL', 'KEY_LEFTALT'])
                 elif event['direction'] == 'right':
-                    self._sway.change_workspace('right')
+                    # change to workspace on the right
+                    self._virtual_input.key('KEY_L', ['KEY_LEFTMETA', 'KEY_LEFTCTRL', 'KEY_LEFTALT'])
                 elif event['direction'] == 'up':
                     if self._sway.focused_app == 'firefoxdeveloperedition':
                         # reopen window
@@ -406,13 +399,17 @@ class SwayGestureInput:
                         self._virtual_input.key('KEY_W', ['KEY_LEFTCTRL', 'KEY_LEFTSHIFT'])
             else:
                 if event['direction'] == 'left':
-                    self._sway.change_focus('left')
+                    # focus container on the left
+                    self._virtual_input.key('KEY_H', ['KEY_LEFTMETA'])
                 elif event['direction'] == 'right':
-                    self._sway.change_focus('right')
+                    # focus container on the right
+                    self._virtual_input.key('KEY_L', ['KEY_LEFTMETA'])
                 elif event['direction'] == 'up':
-                    self._sway.change_focus('up')
+                    # focus container above
+                    self._virtual_input.key('KEY_K', ['KEY_LEFTMETA'])
                 elif event['direction'] == 'down':
-                    self._sway.change_focus('down')
+                    # focus container below
+                    self._virtual_input.key('KEY_J', ['KEY_LEFTMETA'])
 
     def _handle_status(self, event):
         # ignore regular scroll
