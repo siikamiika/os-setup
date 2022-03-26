@@ -203,11 +203,11 @@ bar {
 for_window [window_role="pop-up"] floating enable
 for_window [class="Pcmanfm"] floating enable
 for_window [app_id="pcmanfm-qt"] floating enable
-for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resize set 80 ppt 30 ppt, move position 10 ppt 0
-for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0
-for_window [app_id="firefoxdeveloperedition" title="ピクチャーインピクチャー"] floating enable, border none, opacity 0.8, resize set 20 ppt 15 ppt, move position 80 ppt 0
-for_window [app_id="firefoxdeveloperedition" title="^\[player\]"] floating enable, border none, opacity 0.6, resize set 25 ppt 20 ppt, move position 98 ppt -18 ppt
-for_window [app_id="firefoxdeveloperedition" title="^\[tl\]"] floating enable, border none, opacity 0.6
+for_window [title="^launcher$"] floating enable, border none, opacity 0.8, resize set 80 ppt 30 ppt, move position 10 ppt 0, sticky enable
+for_window [app_id="firefoxdeveloperedition" title="Firefox — 共有インジケータ"] floating enable, border none, opacity 0.5, move position 0 0, sticky enable
+for_window [app_id="firefoxdeveloperedition" title="ピクチャーインピクチャー"] floating enable, border none, opacity 0.8, resize set 20 ppt 15 ppt, move position 80 ppt 0, sticky enable
+for_window [app_id="firefoxdeveloperedition" title="^\[player\]"] floating enable, border none, opacity 0.6, resize set 25 ppt 20 ppt, move position 98 ppt -18 ppt, sticky enable
+for_window [app_id="firefoxdeveloperedition" title="^\[tl\]"] floating enable, border none, opacity 0.6, sticky enable
 # this does not work in sway, use workaround
 # for_window [floating] resize set 640 480
 floating_maximum_size 1800 x 1000
