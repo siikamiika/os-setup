@@ -66,21 +66,21 @@ bindsym $mod+a focus parent
 bindsym $mod+Shift+a focus child
 
 # switch to workspace
-bindsym $mod+1 workspace 1, focus floating
-bindsym $mod+2 workspace 2, focus floating
-bindsym $mod+3 workspace 3, focus floating
-bindsym $mod+4 workspace 4, focus floating
-bindsym $mod+5 workspace 5, focus floating
-bindsym $mod+6 workspace 6, focus floating
-bindsym $mod+7 workspace 7, focus floating
-bindsym $mod+8 workspace 8, focus floating
-bindsym $mod+9 workspace 9, focus floating
-bindsym $mod+0 workspace 10, focus floating
+bindsym $mod+1 workspace 1; [title="^launcher$"] focus
+bindsym $mod+2 workspace 2; [title="^launcher$"] focus
+bindsym $mod+3 workspace 3; [title="^launcher$"] focus
+bindsym $mod+4 workspace 4; [title="^launcher$"] focus
+bindsym $mod+5 workspace 5; [title="^launcher$"] focus
+bindsym $mod+6 workspace 6; [title="^launcher$"] focus
+bindsym $mod+7 workspace 7; [title="^launcher$"] focus
+bindsym $mod+8 workspace 8; [title="^launcher$"] focus
+bindsym $mod+9 workspace 9; [title="^launcher$"] focus
+bindsym $mod+0 workspace 10; [title="^launcher$"] focus
 # ...in a direction
-bindsym $mod+Control+Mod1+h workspace prev_on_output, focus floating
-bindsym $mod+Control+Mod1+l workspace next_on_output, focus floating
-bindsym $mod+Control+Mod1+Left workspace prev_on_output, focus floating
-bindsym $mod+Control+Mod1+Right workspace next_on_output, focus floating
+bindsym $mod+Control+Shift+h workspace prev_on_output; [title="^launcher$"] focus
+bindsym $mod+Control+Shift+l workspace next_on_output; [title="^launcher$"] focus
+bindsym $mod+Control+Shift+Left workspace prev_on_output; [title="^launcher$"] focus
+bindsym $mod+Control+Shift+Right workspace next_on_output; [title="^launcher$"] focus
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace 1
