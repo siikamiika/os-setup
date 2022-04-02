@@ -49,6 +49,7 @@ window#waybar.hidden {
 #backlight,
 #pulseaudio,
 #battery,
+#custom-magictrackpadbat,
 #clock,
 #tray {
     padding: 0 10px;
@@ -117,6 +118,8 @@ label:focus {
     animation-iteration-count: infinite;
     animation-direction: alternate;
 }
+
+#custom-magictrackpadbat { }
 
 #clock { }
 

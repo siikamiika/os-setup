@@ -6,7 +6,7 @@
     // Choose the order of the modules
     "modules-left": ["sway/workspaces"],
     // "modules-center": ["sway/window"],
-    "modules-right": ["network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "clock", "tray"],
+    "modules-right": ["network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "custom/magictrackpadbat", "clock", "tray"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": false,
@@ -84,6 +84,11 @@
         // "format-good": "", // An empty format will hide the module
         // "format-full": "",
         "format-icons": ["", "", "", "", ""]
+    },
+    "custom/magictrackpadbat": {
+        "format": "{}%  ",
+        "exec": "cat /sys/class/power_supply/hid-CC2142302BD0W5WAK-battery/capacity || cat /sys/class/power_supply/hid-3c:a6:f6:bd:8d:86-battery/capacity || false",
+        "interval": 10
     },
     "clock": {
         "tooltip": false,
