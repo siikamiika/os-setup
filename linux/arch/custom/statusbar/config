@@ -23,11 +23,12 @@
     },
     "network": {
         // "interface": "wlp2*", // (Optional) To force the use of this interface
-        "format-wifi": "{essid} ({signalStrength}%) ",
-        "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
+        "format-wifi": "{essid}: ↑{bandwidthUpBits} ↓{bandwidthDownBits} ({signalStrength}%) ",
+        "format-ethernet": "{ifname}: ↑{bandwidthUpBits} ↓{bandwidthDownBits} ",
         "format-linked": "{ifname} (No IP) ",
         "format-disconnected": "Disconnected ⚠",
-        "format-alt": "{ifname}: {ipaddr}/{cidr}"
+        "format-alt": "{ifname}: {ipaddr}/{cidr}",
+        "interval": 5
     },
     "cpu": {
         "format": "{usage}% ",
