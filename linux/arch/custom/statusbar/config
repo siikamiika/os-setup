@@ -6,7 +6,7 @@
     // Choose the order of the modules
     "modules-left": ["sway/workspaces"],
     // "modules-center": ["sway/window"],
-    "modules-right": ["network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "custom/magictrackpadbat", "clock", "tray"],
+    "modules-right": ["network", "cpu", "memory", "custom/swap", "backlight", "pulseaudio", "battery", "custom/magictrackpadbat", "custom/gamecontrollerbat", "clock", "tray"],
     // Modules configuration
     "sway/workspaces": {
         "disable-scroll": false,
@@ -87,8 +87,13 @@
         "format-icons": ["", "", "", "", ""]
     },
     "custom/magictrackpadbat": {
-        "format": "{}%  ",
-        "exec": "cat /sys/class/power_supply/hid-CC2142302BD0W5WAK-battery/capacity || cat /sys/class/power_supply/hid-3c:a6:f6:bd:8d:86-battery/capacity || false",
+        "format": "{}%  ",
+        "exec": "get_battery_capacity 'Apple Inc. Magic Trackpad' 'Magic Trackpad'",
+        "interval": 10
+    },
+    "custom/gamecontrollerbat": {
+        "format": "{}%  ",
+        "exec": "get_battery_capacity 'Wireless Controller' 'Sony Interactive Entertainment Wireless Controller'",
         "interval": 10
     },
     "clock": {

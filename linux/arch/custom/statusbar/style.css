@@ -50,6 +50,7 @@ window#waybar.hidden {
 #pulseaudio,
 #battery,
 #custom-magictrackpadbat,
+#custom-gamecontrollerbat,
 #clock,
 #tray {
     padding: 0 10px;
@@ -120,6 +121,8 @@ label:focus {
 }
 
 #custom-magictrackpadbat { }
+
+#custom-gamecontrollerbat { }
 
 #clock { }
 

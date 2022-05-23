@@ -1,0 +1,11 @@
+#!/bin/bash
+
+percentages=""
+for batt in /sys/class/power_supply/*; do
+    for hid_name in "$@"; do
+        if grep -q "^HID_NAME=$hid_name$" "$batt/device/uevent"; then
+            percentages="$percentages;$(<"$batt/capacity")"
+        fi
+    done
+done
+echo "${percentages:1}"
