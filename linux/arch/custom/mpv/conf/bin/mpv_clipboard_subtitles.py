@@ -201,7 +201,7 @@ def main():
         print('no subtitles found')
         return
 
-    mp = MPV(script='~/.mpv/scripts/manual/focusplay.lua')
+    mp = MPV(script='~/.config/mpv/manual_scripts/focusplay.lua')
 
     mp.command('loadfile', video)
 
