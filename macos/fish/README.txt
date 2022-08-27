@@ -1,0 +1,2 @@
+- add /opt/homebrew/bin/fish to /etc/shells
+- chsh -s fish

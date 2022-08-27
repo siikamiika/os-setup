@@ -4,14 +4,18 @@ echo "Configuring Firefox"
 
 install_user_js()
 {
-    local ff_root=~/.mozilla/firefox
+    if [ "$(uname)" = "Linux" ]; then
+        local ff_root=~/.mozilla/firefox
+    elif [ "$(uname)" = "Darwin" ]; then
+        local ff_root=~/Library/Application\ Support/Firefox
+    fi
     local profiles_ini="$ff_root/profiles.ini"
 
     if [ ! -e "$profiles_ini" ]; then
         echo "Firefox profiles not found, exiting" && exit 1
     fi
 
-    local profile_dir="$ff_root/$(grep -oP 'Default=\K.*' "$profiles_ini" | head -1 | sed 's#/##g')"
+    local profile_dir="$ff_root/$(grep -oP 'Default=\K[^1].*' "$profiles_ini" | head -1)"
     if [ ! -d "$profile_dir" ]; then
         echo "Invalid profile directory specified in profiles.ini" && exit 1
     fi
@@ -21,6 +25,7 @@ install_user_js()
 
 install_tab_control()
 {
+    # TODO macos ~/Library/Application Support/Mozilla/NativeMessagingHosts/
     local vc_dir=~/koodi/firefox-tab-control
     local nmh_dir=~/.mozilla/native-messaging-hosts
     [ ! -d "$vc_dir" ] && git clone git@github.com:siikamiika/firefox-tab-control.git "$vc_dir"
@@ -36,6 +41,7 @@ install_tab_control()
 
 set_default_browser()
 {
+    # TODO macos
     local src=/usr/share/applications/firefox-developer-edition.desktop
     local dest_dir=~/.local/share/applications
     local dest_entry=firefox-developer-edition-new-window.desktop
@@ -49,5 +55,7 @@ set_default_browser()
 }
 
 install_user_js
-install_tab_control
-set_default_browser
+if [ "$(uname)" = "Linux" ]; then
+    install_tab_control
+    set_default_browser
+fi
