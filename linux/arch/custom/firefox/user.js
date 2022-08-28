@@ -98,7 +98,9 @@ user_pref("browser.gesture.swipe.left.shift", "Browser:PrevTab");
 user_pref("browser.gesture.swipe.right.shift", "Browser:NextTab");
 user_pref("browser.gesture.twist.left", "Browser:PrevTab");
 user_pref("browser.gesture.twist.right", "Browser:NextTab");
-user_pref("browser.gesture.twist.threshold", 12);
+user_pref("browser.gesture.twist.threshold", 2);
+user_pref("browser.gesture.twist.latched", true);
+
 
 // ---------------------
 // keyboard
