@@ -89,6 +89,18 @@ user_pref("general.smoothScroll.mouseWheel.durationMinMS", 75);
 
 
 // ---------------------
+// gestures
+// ---------------------
+// TODO only MacIntel
+user_pref("browser.gesture.swipe.down", "cmd_close");
+user_pref("browser.gesture.swipe.up", "History:UndoCloseTab");
+user_pref("browser.gesture.swipe.left.shift", "Browser:PrevTab");
+user_pref("browser.gesture.swipe.right.shift", "Browser:NextTab");
+user_pref("browser.gesture.twist.left", "Browser:PrevTab");
+user_pref("browser.gesture.twist.right", "Browser:NextTab");
+user_pref("browser.gesture.twist.threshold", 12);
+
+// ---------------------
 // keyboard
 // ---------------------
 user_pref("ui.key.menuAccessKeyFocuses", false);
