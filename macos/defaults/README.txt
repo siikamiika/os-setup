@@ -1,0 +1,2 @@
+- disable Spotlight Siri Suggestions
+    - TODO edit ~/Library/Preferences/com.apple.Spotlight.plist array item enabled = 1 where name = MENU_SPOTLIGHT_SUGGESTIONS
