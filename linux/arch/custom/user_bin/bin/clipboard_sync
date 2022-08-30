@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# host:port
+remote_addr="$1"
+os="$(uname -s)"
+
+case "$os" in
+    Linux)
+        copy_tool="wl-copy"
+        paste_tool="wl-paste -n"
+        ;;
+    Darwin)
+        copy_tool="pbcopy"
+        paste_tool="pbpaste"
+        ;;
+    *)
+        echo "Unknown os: $os"
+        exit 1
+        ;;
+esac
+
+prev=""
+while true; do
+    sleep 0.5
+    cur="$($paste_tool)"
+    if [ "$prev" != "$cur" ]; then
+        echo -n "$cur" | base64
+        prev="$cur"
+    fi
+done \
+| secure_bus --remote-server-addr "$remote_addr" \
+| while read -r line; do
+    echo "$line" | base64 -d | $copy_tool
+done
