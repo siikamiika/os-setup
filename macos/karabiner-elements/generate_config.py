@@ -134,6 +134,7 @@ native_key_apps = [
     "^io\\.alacritty$",
     "^net\\.kovidgoyal\\.kitty$",
     "^com\\.blizzard\\.worldofwarcraft$",
+    "^com\\.utmapp\\.UTM$",
 ]
 
 rules = {
