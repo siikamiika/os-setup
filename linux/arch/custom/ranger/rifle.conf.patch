@@ -1,13 +1,15 @@
 142a143
 > ext pdf, has firefox-developer-edition, X, flag f = firefox-developer-edition --new-window -- "$@"
-265,266c266,268
+195a197
+> mime ^image, has open,      X, flag f = open -- "$@"
+265,266c267,269
 < label open, has xdg-open = xdg-open -- "$@"
 < label open, has open     = open -- "$@"
 ---
 > label open = ${VISUAL:-$EDITOR} -- "$@"
 > # label open, has xdg-open = xdg-open -- "$@"
 > # label open, has open     = open -- "$@"
-269,271c271,273
+269,271c272,274
 <               !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = ask
 < label editor, !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = ${VISUAL:-$EDITOR} -- "$@"
 < label pager,  !mime ^text, !ext xml|json|csv|tex|py|pl|rb|js|sh|php  = "$PAGER" -- "$@"
