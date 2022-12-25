@@ -1,3 +1,7 @@
+97c97
+< ext exe                       = wine "$1"
+---
+> # ext exe                       = wine "$1"
 142a143
 > ext pdf, has firefox-developer-edition, X, flag f = firefox-developer-edition --new-window -- "$@"
 195a197
