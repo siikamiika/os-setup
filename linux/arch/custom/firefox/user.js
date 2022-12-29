@@ -49,6 +49,7 @@ user_pref("full-screen-api.approval-required", false);
 user_pref("full-screen-api.transition.timeout", 0);
 user_pref("full-screen-api.warning.delay", 0);
 user_pref("full-screen-api.warning.timeout", 0);
+user_pref("browser.fullscreen.autohide", true);
 
 
 // ---------------------
