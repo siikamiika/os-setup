@@ -8,18 +8,14 @@ for line in sys.stdin:
     if line.startswith('#ifdef '):
         variable = line.split()[1]
         conditions.append(variable in os.environ)
-        continue
     elif line.startswith('#ifndef '):
         variable = line.split()[1]
         conditions.append(variable not in os.environ)
-        continue
     elif line.startswith('#elseif '):
         conditions.pop()
         variable = line.split()[1]
         conditions.append(variable in os.environ)
-        continue
     elif line.startswith('#endif'):
         conditions.pop()
-        continue
-    if all(conditions):
+    elif all(conditions):
         print(line, end='')
