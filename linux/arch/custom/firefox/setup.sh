@@ -6,8 +6,10 @@ install_user_js()
 {
     if [ "$(uname)" = "Linux" ]; then
         local ff_root=~/.mozilla/firefox
+        export IS_LINUX=1
     elif [ "$(uname)" = "Darwin" ]; then
         local ff_root=~/Library/Application\ Support/Firefox
+        export IS_MACOS=1
     fi
     local profiles_ini="$ff_root/profiles.ini"
 
@@ -20,7 +22,7 @@ install_user_js()
         echo "Invalid profile directory specified in profiles.ini" && exit 1
     fi
 
-    cp ./user.js "$profile_dir/user.js"
+    ifdef_preprocessor <./user.js.template > "$profile_dir/user.js"
 }
 
 install_tab_control()

@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+
+skip = False
+for line in sys.stdin:
+    if line.startswith('#ifdef '):
+        variable = line.split()[1]
+        if variable not in os.environ:
+            skip = True
+        continue
+    elif line.startswith('#elseif '):
+        skip = False
+        variable = line.split()[1]
+        if variable not in os.environ:
+            skip = True
+        continue
+    elif line.startswith('#endif'):
+        skip = False
+        continue
+    if not skip:
+        print(line, end='')

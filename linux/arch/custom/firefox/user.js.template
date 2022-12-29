@@ -1,3 +1,5 @@
+// vi: ft=javascript
+
 // ---------------------
 // quit protection
 // ---------------------
@@ -79,20 +81,27 @@ user_pref("mousewheel.with_shift.action.override_x", 1);
 // // with win key
 // user_pref("mousewheel.with_win.delta_multiplier_x", 5000);
 // user_pref("mousewheel.with_win.delta_multiplier_y", 1000);
+#ifdef IS_LINUX
 // touchpad on wayland
 user_pref("mousewheel.default.delta_multiplier_x", 30);
 user_pref("mousewheel.default.delta_multiplier_y", 30);
 user_pref("mousewheel.default.delta_multiplier_z", 30);
+#elseif IS_MACOS
+// touchpad on mac
+user_pref("mousewheel.default.delta_multiplier_x", 100);
+user_pref("mousewheel.default.delta_multiplier_y", 100);
+user_pref("mousewheel.default.delta_multiplier_z", 100);
+#endif
 
 // smooth scrolling with wheel
 user_pref("general.smoothScroll.mouseWheel.durationMaxMS", 75);
 user_pref("general.smoothScroll.mouseWheel.durationMinMS", 75);
 
 
+#ifdef IS_MACOS
 // ---------------------
 // gestures
 // ---------------------
-// TODO only MacIntel
 user_pref("browser.gesture.swipe.down", "cmd_close");
 user_pref("browser.gesture.swipe.up", "History:UndoCloseTab");
 user_pref("browser.gesture.swipe.left.shift", "Browser:PrevTab");
@@ -101,6 +110,7 @@ user_pref("browser.gesture.twist.left", "Browser:PrevTab");
 user_pref("browser.gesture.twist.right", "Browser:NextTab");
 user_pref("browser.gesture.twist.threshold", 2);
 user_pref("browser.gesture.twist.latched", true);
+#endif
 
 
 // ---------------------
