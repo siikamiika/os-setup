@@ -4,7 +4,7 @@
 > # ext exe                       = wine "$1"
 142a143
 > ext pdf, has firefox-developer-edition, X, flag f = firefox-developer-edition --new-window -- "$@"
-195a197
+194a196
 > mime ^image, has open,      X, flag f = open -- "$@"
 265,266c267,269
 < label open, has xdg-open = xdg-open -- "$@"
