@@ -11,3 +11,6 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 
 # disable autocorrect
 defaults write -g NSAutomaticSpellingCorrectionEnabled -bool false
+
+# good riddance
+defaults write com.apple.finder QuitMenuItem -bool YES
