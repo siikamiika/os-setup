@@ -1,0 +1,26 @@
+# nohello
+set fish_greeting
+
+# custom functions
+function r
+    ranger $argv
+end
+
+#ifdef IS_MACOS
+# mac env
+eval (/opt/homebrew/bin/brew shellenv)
+#endif
+
+# path
+fish_add_path -g ~/.local/bin/
+fish_add_path -g ~/go/bin/
+#ifdef IS_MACOS
+fish_add_path -g /opt/homebrew/opt/grep/libexec/gnubin/
+#endif
+
+# env
+set -g -x EDITOR nvim
+#ifdef IS_LINUX
+# https://github.com/systemd/systemd/issues/7641
+export (/usr/lib/systemd/user-environment-generators/30-systemd-environment-d-generator)
+#endif
