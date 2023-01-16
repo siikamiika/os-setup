@@ -1,3 +1,12 @@
+# lock screen
+cmd-0x29 : pmset displaysleepnow
+
+# launchers
+# TODO cmd-r app launcher
+# TODO cmd-o open window chooser
+# TODO cmd-t firefox tab control
+# TODO cmd-p password menu
+
 # layout
 alt+shift-1 : macism org.unknown.keylayout.autism
 # TODO mozc
