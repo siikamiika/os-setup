@@ -1,3 +1,6 @@
 #!/bin/sh
 
-osascript ~/.config/applescripts/"$1".scpt
+script_name=$1
+shift
+
+osascript ~/.config/applescripts/"$script_name".scpt "$@"
