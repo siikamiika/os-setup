@@ -1,1 +1,10 @@
+# layout
+alt+shift-1 : macism org.unknown.keylayout.autism
+# TODO mozc
+alt+shift-2 : macism com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese
+# TODO rime
+alt+shift-3 : macism com.apple.inputmethod.SCIM.ITABC
+cmd-0x2F : macism com.apple.CharacterPaletteIM
+
+# fix youre shit
 shift-f8 : scpt fixtrackpad
