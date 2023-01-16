@@ -1,0 +1,3 @@
+#!/bin/sh
+
+osascript ~/.config/applescripts/"$1".scpt
