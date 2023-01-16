@@ -6,5 +6,10 @@ alt+shift-2 : macism com.apple.inputmethod.Kotoeri.RomajiTyping.Japanese
 alt+shift-3 : macism com.apple.inputmethod.SCIM.ITABC
 cmd-0x2F : macism com.apple.CharacterPaletteIM
 
+# new window
+cmd-return : scpt kitty-new-window
+ctrl+cmd-return : scpt firefox-new-window
+ctrl+cmd-p : scpt firefox-new-private-window
+
 # fix youre shit
 shift-f8 : scpt fixtrackpad
