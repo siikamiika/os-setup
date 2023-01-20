@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import itertools
 from typing import *
 
 def get_code_type(code):
@@ -260,31 +261,48 @@ rules = {
                 ]]
             },
             "devices": [
-                # TODO might be unnecessarily duplicated with 641:1452
-                # is fn the same as keyboard_fn?
-                {
-                    "disable_built_in_keyboard_if_exists": False,
-                    "fn_function_keys": [],
-                    "identifiers": {
-                        "is_keyboard": True,
-                        "is_pointing_device": False,
-                        "product_id": 630,
-                        "vendor_id": 1452
-                    },
-                    "ignore": False,
-                    "manipulate_caps_lock_led": True,
-                    "simple_modifications": [simple_mapping(f, t) for f, t in [
-                        ("fn", "left_control"),
-                        ("left_control", "fn"),
-                        ("left_option", "left_command"),
-                        ("left_command", "left_option"),
-                        ("right_command", "right_option"),
-                        ("right_option", "right_command"),
-                        ("non_us_backslash", "grave_accent_and_tilde"),
-                        ("grave_accent_and_tilde", "non_us_backslash"),
-                    ]],
-                    "treat_as_built_in_keyboard": False
-                },
+                *itertools.chain(*[
+                    [
+                        {
+                            "disable_built_in_keyboard_if_exists": False,
+                            "fn_function_keys": [],
+                            "identifiers": {
+                                "is_keyboard": True,
+                                "is_pointing_device": False,
+                                "product_id": product_id,
+                                "vendor_id": 1452
+                            },
+                            "ignore": False,
+                            "manipulate_caps_lock_led": True,
+                            "simple_modifications": [simple_mapping(f, t) for f, t in [
+                                ("keyboard_fn", "left_control"),
+                                ("left_control", "keyboard_fn"),
+                                ("left_option", "left_command"),
+                                ("left_command", "left_option"),
+                                ("right_command", "right_option"),
+                                ("right_option", "right_command"),
+                                ("non_us_backslash", "grave_accent_and_tilde"),
+                                ("grave_accent_and_tilde", "non_us_backslash"),
+                            ]],
+                            "treat_as_built_in_keyboard": False
+                        },
+                        {
+                            "disable_built_in_keyboard_if_exists": False,
+                            "fn_function_keys": [],
+                            "identifiers": {
+                                "is_keyboard": False,
+                                "is_pointing_device": True,
+                                "product_id": product_id,
+                                "vendor_id": 1452
+                            },
+                            "ignore": True,
+                            "manipulate_caps_lock_led": False,
+                            "simple_modifications": [],
+                            "treat_as_built_in_keyboard": False
+                        }
+                    ]
+                    for product_id in [630, 641, 832]
+                ]),
                 {
                     "disable_built_in_keyboard_if_exists": False,
                     "fn_function_keys": [],
@@ -295,43 +313,6 @@ rules = {
                         "vendor_id": 1133
                     },
                     "ignore": False,
-                    "manipulate_caps_lock_led": False,
-                    "simple_modifications": [],
-                    "treat_as_built_in_keyboard": False
-                },
-                {
-                    "disable_built_in_keyboard_if_exists": False,
-                    "fn_function_keys": [],
-                    "identifiers": {
-                        "is_keyboard": True,
-                        "is_pointing_device": False,
-                        "product_id": 641,
-                        "vendor_id": 1452
-                    },
-                    "ignore": False,
-                    "manipulate_caps_lock_led": True,
-                    "simple_modifications": [simple_mapping(f, t) for f, t in [
-                        ("keyboard_fn", "left_control"),
-                        ("left_control", "keyboard_fn"),
-                        ("left_option", "left_command"),
-                        ("left_command", "left_option"),
-                        ("right_command", "right_option"),
-                        ("right_option", "right_command"),
-                        ("non_us_backslash", "grave_accent_and_tilde"),
-                        ("grave_accent_and_tilde", "non_us_backslash"),
-                    ]],
-                    "treat_as_built_in_keyboard": False
-                },
-                {
-                    "disable_built_in_keyboard_if_exists": False,
-                    "fn_function_keys": [],
-                    "identifiers": {
-                        "is_keyboard": False,
-                        "is_pointing_device": True,
-                        "product_id": 641,
-                        "vendor_id": 1452
-                    },
-                    "ignore": True,
                     "manipulate_caps_lock_led": False,
                     "simple_modifications": [],
                     "treat_as_built_in_keyboard": False
