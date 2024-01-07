@@ -14,3 +14,6 @@ defaults write -g NSAutomaticSpellingCorrectionEnabled -bool false
 
 # good riddance
 defaults write com.apple.finder QuitMenuItem -bool YES
+
+# disable input source switch popup, shows randomly and is useless anyway
+defaults write kCFPreferencesAnyApplication TSMLanguageIndicatorEnabled 0
